@@ -13,7 +13,7 @@
 //-------------------------------------------------------------------------------
 
 var bugpack = require('bugpack').context(module);
-
+var child_process = require('child_process');
 
 //-------------------------------------------------------------------------------
 // BugPack
@@ -65,19 +65,20 @@ DeployBug.registerPackage = function(descriptionJSON, callback) {
 };
 
 DeployBug.deployPackage = function(key, callback) {
-    var description = this.packageRegistry.get(key);
+    var description = DeployBug.packageRegistry.get(key);
     // var nodes = description.nodes;
     
     // nodes.forEach(function(node, index, array){
         // shell into node.hostname + ':' + node.port
         var commandString = 'npm install -g ' + description.packageURL;
+        var logs = [];
         child_process.exec(commandString, function (error, stdout, stderr) {
-            console.log('stdout: ' + stdout);
-            console.log('stderr: ' + stderr);
+            logs.push('stdout: ' + stdout);
+            logs.push('stderr: ' + stderr);
             if (error !== null) {
-              console.log('exec error: ' + error);
+              logs.push('exec error: ' + error);
             }
-            callback(error);
+            callback(logs.join(", "));
         });
     // });
     // registration retrieval
@@ -107,11 +108,11 @@ DeployBug.stopPackage = function(key, callback) {
 //-------------------------------------------------------------------------------
 
 DeployBug.getPackageRegistryDescriptionByKey = function(key){
-        DeployBug.packageRegistry.get(key);
+        return DeployBug.packageRegistry.get(key);
     };
     
 DeployBug.getPackageRegistryKeys = function(){
-        DeployBug.packageRegistry.getKeyArray();
+        return DeployBug.packageRegistry.getKeyArray();
     };
 
 

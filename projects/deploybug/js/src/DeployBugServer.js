@@ -75,7 +75,7 @@ DeployBugServer.enableRoutes = function(app, express, callback){
     app.namespace('/deploybug/packages', function(){ //DONOT DOUBLE NEST NAMESPACES!!
         app.get('/registry/index', function(req, res){
              var packageRegistryKeys = DeployBug.getPackageRegistryKeys();
-             res.json({packageRegistryKeys: packageRegistryKeys});
+             res.json({"packageRegistryKeys": packageRegistryKeys});
              res.end();
          });
 
@@ -120,12 +120,8 @@ DeployBugServer.enableRoutes = function(app, express, callback){
               *  nodes: (<Array> | string) // Array of node IDs or string specifying type, e.g. all 'application' servers, all 'database' servers, all 'redis' servers, etc. 
               *  } req.body
               */
-             DeployBug.deployPackage(key, function(error){
-                 if(!error){
-                     res.send('Deployment Successful');
-                 } else {
-                     res.send('Error: Deployment Failed');
-                 }
+             DeployBug.deployPackage(key, function(logs){
+                 res.send("Logs: "+ logs);
              });
 
              res.end();
