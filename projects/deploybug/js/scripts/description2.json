@@ -1,0 +1,6 @@
+{'key': 'XYZ',
+ 'packageURL': 'https://s3.amazonaws.com/airbug-sung/buildbug-0.0.6.tgz',
+ 'startScriptPath': '',
+ 'stopScriptPath': '',
+ 'nodes': [{'hostname': 'http://localhost', 'port': 3000, 'type': 'appliction'}]
+}

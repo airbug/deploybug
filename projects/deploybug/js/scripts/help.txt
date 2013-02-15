@@ -1,0 +1,36 @@
+usage: deploybug [action] [options]
+
+actions:
+    register    Register a package description with the DeployBug server
+                    deploybug register [filepath] --server [server-address] --port [port-number]
+    deploy      Deploy a previously registered package onto the nodes specified in the package description
+                    deploybug deploy [key] --server [server-address]
+    start       Run the start script for the package on the deployed nodes
+                    deploybug start [key] --server [server-address]
+    stop        Stop the process running on the deployed nodes
+                    deploybug stop [key] --server [server-address]
+    restart     Restart the process running on the deployed nodes
+                    deploybug restart [key] --server [server-address]
+                    
+options:
+    -s, --server        Hostname of the DeployBugServer
+    -p, --port          Port number of the DeployBugServer
+    -k, --key           Package Key
+    -d, --description   Package description file path
+    -n, --nodes         Specify nodes or node type(s). Defaults to all nodes specified in the package description
+    -h, --help          Help
+    
+    
+    
+
+
+// example: deploybug register [filepath] -s [server-address] -p [port-number]
+//          deploybug deploy [key]
+//          deploybug start [key]
+//          deploybug stop [key]
+//          deploybug restart [key]
+//          deploybug --help
+// require command and server info
+// register requires package description
+// deploy, start, and stop require package key
+//TODO: Utilize Flags --packageDescription, --key, --server, --options

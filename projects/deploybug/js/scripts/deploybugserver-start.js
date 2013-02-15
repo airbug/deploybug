@@ -2,7 +2,7 @@
 // Requires
 //-------------------------------------------------------------------------------
 
-//@Require('deploybug-server.DeployBugServer')
+//@Require('deploybug.DeployBugServer')
 
 
 //-------------------------------------------------------------------------------
@@ -11,16 +11,27 @@
 
 var bugpack = require('bugpack').context(module);
 
-
 //-------------------------------------------------------------------------------
 // BugPack
 //-------------------------------------------------------------------------------
 
-var DeployBugServer = bugpack.require('deploybug-server.DeployBugServer');
+var deployBugServer = bugpack.require('deploybug.DeployBugServer');
 
 
 //-------------------------------------------------------------------------------
-// Exports
+// Bootstrap
 //-------------------------------------------------------------------------------
 
-module.exports = DeployBugServer;
+// TODO: this should create a new instance of DeployBugServer
+// var deployBugServer = new DeployBugServer();
+// or var deployBugServer = bugpack.require('deploybug.DeployBugServer');
+
+deployBugServer.start(function(error) {
+    if (error) {
+        console.log(error);
+        console.log(error.stack);
+        process.exit(1);
+    } else {
+        console.log("DeployBug server successfully started");
+    }
+});
