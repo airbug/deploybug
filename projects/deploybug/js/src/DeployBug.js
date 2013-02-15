@@ -60,7 +60,7 @@ DeployBug.nodeRegistry = new Map();
  *
  */
 DeployBug.registerPackage = function(descriptionJSON, callback) {
-    this.packageRegistry.put(descriptionJSON.key, descriptionJSON);
+    DeployBug.packageRegistry.put(descriptionJSON.key, descriptionJSON);
     callback();
 };
 

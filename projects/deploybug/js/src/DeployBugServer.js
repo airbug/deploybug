@@ -81,7 +81,7 @@ DeployBugServer.enableRoutes = function(app, express, callback){
 
          app.get('/registry/:key', function(req, res){
              var key = req.params.key;
-             var description = DeployBugServer.packageRegistry.get(key);
+             var description = DeployBug.packageRegistry.get(key);
              res.json(description);
              res.end();
          });
