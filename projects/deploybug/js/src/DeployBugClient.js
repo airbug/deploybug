@@ -67,17 +67,18 @@ DeployBugClient.registerPackage = function(descriptionJSON, serverHostname, serv
     }).on('error', function(e) {
         console.log('problem with request: ' + e.message);
         error = e;
+        callback(error);
     }).on('response', function(res) {
         res.setEncoding('utf8');
         res.on('data', function (chunk) {
             console.log('DATA: ' + chunk);
         });
+        callback(error);
     });
         
     req.write(data, 'utf8');
     req.end();
     
-    callback(error);
 };
 
 // DeployBugClient.updatePackage = function(key, serverHostname, serverPort, callback){
@@ -101,14 +102,15 @@ DeployBugClient.deployPackage = function(key, serverHostname, serverPort, callba
         res.on('data', function (chunk) {
             console.log('DATA: ' + chunk);
         });
+        callback(error);
     }).on('error', function(e) {
         console.log('problem with request: ' + e.message);
         error = e;
+        callback(error);
     });
 
     req.end();
     
-    callback(error);
 };
 
 // DeployBugClient.startPackage = function(key, callback) {

@@ -76,6 +76,7 @@ if (command === '-h' || command === '--help') {
     console.log('description: ' + JSON.stringify(descriptionJSON));
     console.log('server: ' + server);
     console.log('port: ' + port);
+    console.log('Waiting for response from DeployBugServer...');
     
     if(descriptionJSON){
         DeployBugClient.registerPackage(descriptionJSON, server, port, function(error){
@@ -99,6 +100,7 @@ if (command === '-h' || command === '--help') {
     console.log('key: ' + key);
     console.log('server: ' + server);
     console.log('port: ' + port);
+    console.log('Waiting for response from DeployBugServer...');
     
     DeployBugClient.deployPackage(key, server, port, function(error){
         if (error) {

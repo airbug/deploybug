@@ -64,27 +64,25 @@ DeployBug.registerPackage = function(descriptionJSON, callback) {
     callback();
 };
 
-DeployBug.deployPackage = function(key) {
+DeployBug.deployPackage = function(key, callback) {
+    var logs = [];
     var description = DeployBug.packageRegistry.get(key);
-    // var nodes = description.nodes;
+
+    var commandString = 'npm install -g ' + description.packageURL;
+    child_process.exec(commandString, function (error, stdout, stderr) {
+        console.log('stdout: ' + stdout);
+        console.log('stderr: ' + stderr);
+        logs.push('Hey, closure gives access to the variable logs. And, I needed to call the callback inside of this callback because it is asynchronous.')
+        logs.push('stdout: ' + stdout);
+        logs.push('stderr: ' + stderr);
+        if (error !== null) {
+            console.log('exec error: ' + error);
+            logs.push('exec error: ' + error);
+        }
+        callback(logs);
+    });
+
     
-    // nodes.forEach(function(node, index, array){
-        // shell into node.hostname + ':' + node.port
-        var commandString = 'npm install -g ' + description.packageURL;
-        var logs = child_process.exec(commandString, function (error, stdout, stderr) {
-            var logs = [];
-            console.log('stdout: ' + stdout);
-            console.log('stderr: ' + stderr);
-            logs.push('stdout: ' + stdout);
-            logs.push('stderr: ' + stderr);
-            if (error !== null) {
-                console.log('exec error: ' + error);
-                logs.push('exec error: ' + error);
-            }
-            return logs.join(", ");
-        });
-    // });
-    return logs;
     // registration retrieval
     // iterate through nodes
         // shell into node

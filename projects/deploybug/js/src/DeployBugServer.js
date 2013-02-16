@@ -107,9 +107,9 @@ DeployBugServer.enableRoutes = function(app, express, callback){
                  } else {
                      res.send('Error: Registration Failed');
                  }
+                 res.end();
              });
 
-             res.end();
          });
 
          app.post(':key/deploy', function(req, res) {
@@ -120,9 +120,10 @@ DeployBugServer.enableRoutes = function(app, express, callback){
               *  nodes: (<Array> | string) // Array of node IDs or string specifying type, e.g. all 'application' servers, all 'database' servers, all 'redis' servers, etc. 
               *  } req.body
               */
-             var logs = DeployBug.deployPackage(key);
-             res.send(logs);
-             res.end();
+             DeployBug.deployPackage(key, function(logs){
+                 res.json({"logs": logs});
+                 res.end();
+             });
          });
     });
     
