@@ -64,23 +64,27 @@ DeployBug.registerPackage = function(descriptionJSON, callback) {
     callback();
 };
 
-DeployBug.deployPackage = function(key, callback) {
+DeployBug.deployPackage = function(key) {
     var description = DeployBug.packageRegistry.get(key);
     // var nodes = description.nodes;
     
     // nodes.forEach(function(node, index, array){
         // shell into node.hostname + ':' + node.port
         var commandString = 'npm install -g ' + description.packageURL;
-        var logs = [];
-        child_process.exec(commandString, function (error, stdout, stderr) {
+        var logs = child_process.exec(commandString, function (error, stdout, stderr) {
+            var logs = [];
+            console.log('stdout: ' + stdout);
+            console.log('stderr: ' + stderr);
             logs.push('stdout: ' + stdout);
             logs.push('stderr: ' + stderr);
             if (error !== null) {
-              logs.push('exec error: ' + error);
+                console.log('exec error: ' + error);
+                logs.push('exec error: ' + error);
             }
-            callback(logs.join(", "));
+            return logs.join(", ");
         });
     // });
+    return logs;
     // registration retrieval
     // iterate through nodes
         // shell into node

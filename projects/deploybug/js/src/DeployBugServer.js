@@ -120,10 +120,8 @@ DeployBugServer.enableRoutes = function(app, express, callback){
               *  nodes: (<Array> | string) // Array of node IDs or string specifying type, e.g. all 'application' servers, all 'database' servers, all 'redis' servers, etc. 
               *  } req.body
               */
-             DeployBug.deployPackage(key, function(logs){
-                 res.send("Logs: "+ logs);
-             });
-
+             var logs = DeployBug.deployPackage(key);
+             res.send(logs);
              res.end();
          });
     });
