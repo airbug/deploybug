@@ -41,18 +41,18 @@ DeployBugClient.server = null;
 
 /**
  * @param {{
- *  hostname: string,
- *  port: integer,
+ *  packageURL: string,
+ *  packageType: string,
  *  deployScript: (string | Path),
  *  startScript: (string | Path),
  *  stopScript: (string | Path),
  *  restartScript: (string | Path)
- * }} description,
- * @param {function(Error)} callback
+ * }} descriptionJSON,
+ * @param {string} serverHostname
+ * @param {number} serverPort
  *
  */
-DeployBugClient.registerPackage = function(descriptionJSON, serverHostname, serverPort, callback) {
-    var error;
+DeployBugClient.registerPackage = function(descriptionJSON, serverHostname, serverPort) {
     var data = JSON.stringify(descriptionJSON);
     var options = {
       hostname: serverHostname,
@@ -62,18 +62,16 @@ DeployBugClient.registerPackage = function(descriptionJSON, serverHostname, serv
       headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}
     };
     var req = http.request(options, function(res){  // DRY up this req object
+        console.log('Response from DeployBugServer:');
         console.log('STATUS: ' + res.statusCode);
         console.log('HEADERS: ' + JSON.stringify(res.headers));
-    }).on('error', function(e) {
-        console.log('problem with request: ' + e.message);
-        error = e;
-        callback(error);
+    }).on('error', function(error) {
+        console.log('problem with request: ' + error.message);
     }).on('response', function(res) {
         res.setEncoding('utf8');
         res.on('data', function (chunk) {
-            console.log('DATA: ' + chunk);
+            console.log('BODY: ' + chunk);
         });
-        callback(error);
     });
         
     req.write(data, 'utf8');
@@ -81,12 +79,11 @@ DeployBugClient.registerPackage = function(descriptionJSON, serverHostname, serv
     
 };
 
-// DeployBugClient.updatePackage = function(key, serverHostname, serverPort, callback){
+// DeployBugClient.updatePackage = function(key, descriptionJSON, serverHostname, serverPort, callback){
 //     
 // };
 
-DeployBugClient.deployPackage = function(key, serverHostname, serverPort, callback) {
-    var error;
+DeployBugClient.deployPackage = function(key, serverHostname, serverPort) {
     var options = {
       hostname: serverHostname,
       port: serverPort,
@@ -95,31 +92,29 @@ DeployBugClient.deployPackage = function(key, serverHostname, serverPort, callba
       headers: {}
     };
     var req = http.request(options, function(res){   // DRY up this req object
+        console.log('Response from DeployBugServer:');
         console.log('STATUS: ' + res.statusCode);
         console.log('HEADERS: ' + JSON.stringify(res.headers));
     }).on('response', function(res) {
         res.setEncoding('utf8');
         res.on('data', function (chunk) {
-            console.log('DATA: ' + chunk);
+            console.log('BODY: ' + chunk);
         });
-        callback(error);
-    }).on('error', function(e) {
-        console.log('problem with request: ' + e.message);
-        error = e;
-        callback(error);
+    }).on('error', function(error) {
+        console.log('problem with request: ' + error.message);
     });
 
     req.end();
     
 };
 
-// DeployBugClient.startPackage = function(key, callback) {
-//     
-// };
-// 
-// DeployBugClient.stopPackage = function(key, callback) {
-//     
-// };
+DeployBugClient.startPackage = function(key, callback) {
+    
+};
+
+DeployBugClient.stopPackage = function(key, callback) {
+    
+};
 
 
 //-------------------------------------------------------------------------------
