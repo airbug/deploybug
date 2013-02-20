@@ -85,6 +85,23 @@ if (command === '-h' || command === '--help') {
     }
 
 
+} else if (command === "update") {
+    var key = options['key'];
+    var descriptionPath = path.resolve(options['description']);
+    var descriptionJSON = toJSON(BugFs.readFileSync(descriptionPath, 'utf8'));
+    var server = options['server'];
+    var port = options['port'];
+    console.log('description string: ' + JSON.stringify(descriptionJSON));
+    console.log('server: ' + server);
+    console.log('port: ' + port);
+    
+    if(descriptionJSON){
+        console.log('Waiting for response from DeployBugServer...');
+        DeployBugClient.updatePackage(key, descriptionJSON, server, port);
+    } else {
+        console.log(descriptionPath + " is not valid JSON");
+    }
+
 } else if (command === "deploy") {
     var key = options['key'];
     var server = options['server'];
@@ -94,13 +111,29 @@ if (command === '-h' || command === '--help') {
     console.log('port: ' + port);
     console.log('Waiting for response from DeployBugServer...');
 
-    DeployBugClient.deployPackage(key, server, port, function(error){
-        if (error) {
-           console.log("Package " + key + " deployment failed");
-       } else {
-           console.log("Package " + key + " successfully deployed to nodes from DeployBugServer: " + server);
-       }
-    });
+    DeployBugClient.deployPackage(key, server, port);
+
+} else if (command === "start") {
+    var key = options['key'];
+    var server = options['server'];
+    var port = options['port'];
+    console.log('key: ' + key);
+    console.log('server: ' + server);
+    console.log('port: ' + port);
+    console.log('Waiting for response from DeployBugServer...');
+
+    DeployBugClient.startPackage(key, server, port);
+
+} else if (command === "stop") {
+    var key = options['key'];
+    var server = options['server'];
+    var port = options['port'];
+    console.log('key: ' + key);
+    console.log('server: ' + server);
+    console.log('port: ' + port);
+    console.log('Waiting for response from DeployBugServer...');
+
+    DeployBugClient.stopPackage(key, server, port);
 
 } else {
     throw new Error("Unknown command '" + command + "'");
