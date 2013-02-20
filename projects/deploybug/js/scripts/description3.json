@@ -1,0 +1,1 @@
+{"key": "XYZ", "packageURL": "", "packageType": "node", "startScriptPath": "", "stopScriptPath": "", "nodes": [{"hostname": "http://localhost", "port": 3000, "type": "appliction"}]}
