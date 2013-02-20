@@ -40,8 +40,8 @@ var DeployBug = {};
 // Private Static Variables
 //-------------------------------------------------------------------------------
 
-DeployBug.packageRegistry = new Map();
-DeployBug.nodeRegistry = new Map();
+var packageRegistry = new Map();
+var nodeRegistry = new Map();
 
 //-------------------------------------------------------------------------------
 // Public Static Methods
@@ -64,7 +64,7 @@ DeployBug.nodeRegistry = new Map();
 DeployBug.registerPackage = function(descriptionJSON, callback) {
     try{
         isValidPackageDescription(descriptionJSON);
-        DeployBug.packageRegistry.put(descriptionJSON.key, descriptionJSON);
+        packageRegistry.put(descriptionJSON.key, descriptionJSON);
         callback();
     } catch(error){
         callback(error);
@@ -73,7 +73,7 @@ DeployBug.registerPackage = function(descriptionJSON, callback) {
 
 DeployBug.deployPackage = function(key, callback) {
     var logs = [];
-    var description = DeployBug.packageRegistry.get(key);
+    var description = packageRegistry.get(key);
     var packageType = description.packageType;
     var commandString;
     
@@ -121,11 +121,11 @@ DeployBug.stopPackage = function(key, callback) {
 };
 
 DeployBug.getPackageRegistryDescriptionByKey = function(key){
-        return DeployBug.packageRegistry.get(key);
+        return packageRegistry.get(key);
 };
     
 DeployBug.getPackageRegistryKeys = function(){
-        return DeployBug.packageRegistry.getKeyArray();
+        return packageRegistry.getKeyArray();
 };
 
 //-------------------------------------------------------------------------------
