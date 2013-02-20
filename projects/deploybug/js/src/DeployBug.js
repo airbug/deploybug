@@ -21,6 +21,7 @@ var child_process = require('child_process');
 
 var BugFs =     bugpack.require('bugfs.BugFs');
 var Map =       bugpack.require('Map');
+var TypeUtil =  bugpack.require('TypeUtil');
 
 
 //-------------------------------------------------------------------------------
@@ -51,6 +52,7 @@ DeployBug.nodeRegistry = new Map();
  *  hostname: string,
  *  port: integer,
  *  packageURL: string,
+ *  packageType: string,
  *  deployScript: (string | Path),
  *  startScript: (string | Path),
  *  stopScript: (string | Path),
@@ -60,26 +62,39 @@ DeployBug.nodeRegistry = new Map();
  *
  */
 DeployBug.registerPackage = function(descriptionJSON, callback) {
-    DeployBug.packageRegistry.put(descriptionJSON.key, descriptionJSON);
-    callback();
+    try{
+        isValidPackageDescription(descriptionJSON);
+        DeployBug.packageRegistry.put(descriptionJSON.key, descriptionJSON);
+        callback();
+    } catch(error){
+        callback(error);
+    }
 };
 
 DeployBug.deployPackage = function(key, callback) {
     var logs = [];
     var description = DeployBug.packageRegistry.get(key);
-
-    var commandString = 'npm install -g ' + description.packageURL;
+    var packageType = description.packageType;
+    var commandString;
+    
+    if ( /^node$/i.test(packageType) || /^npm$/i.test(packageType)){
+        commandString = 'npm install -g ' + description.packageURL;  // TODO: extract -g flag as an option
+    } else {
+        commandString = 'forever start ' + description.deployScript;
+    }
+    
     child_process.exec(commandString, function (error, stdout, stderr) {
         console.log('stdout: ' + stdout);
         console.log('stderr: ' + stderr);
-        logs.push('Hey, closure gives access to the variable logs. And, I needed to call the callback inside of this callback because it is asynchronous.')
         logs.push('stdout: ' + stdout);
         logs.push('stderr: ' + stderr);
         if (error !== null) {
             console.log('exec error: ' + error);
             logs.push('exec error: ' + error);
+            callback(error, logs.join("\n"));
+        } else {
+            callback(null, logs.join("\n"));
         }
-        callback(logs);
     });
 
     
@@ -105,17 +120,51 @@ DeployBug.stopPackage = function(key, callback) {
     
 };
 
+DeployBug.getPackageRegistryDescriptionByKey = function(key){
+        return DeployBug.packageRegistry.get(key);
+};
+    
+DeployBug.getPackageRegistryKeys = function(){
+        return DeployBug.packageRegistry.getKeyArray();
+};
+
 //-------------------------------------------------------------------------------
 // Private Methods
 //-------------------------------------------------------------------------------
 
-DeployBug.getPackageRegistryDescriptionByKey = function(key){
-        return DeployBug.packageRegistry.get(key);
-    };
+var isValidPackageDescription = function isValidPackageDescription(descriptionJSON){
+    var key = descriptionJSON.key;
+    var packageURL = descriptionJSON.packageURL;
+    var packageType = descriptionJSON.packageType;
+    var requiredProperties = [  {name: "key", value: key},
+                                {name: "packageURL", value: packageURL}, 
+                                {name: "packageType", value: packageType}
+    ];
     
-DeployBug.getPackageRegistryKeys = function(){
-        return DeployBug.packageRegistry.getKeyArray();
-    };
+    requiredProperties.forEach(function(property){
+        var name = property.name;
+        var value = property.value;
+        if(isEmptyString(value) || value == null){
+            throw new Error("Invalid package description. " + name + " is required.");
+        }
+    });
+    
+    if(!TypeUtil.isString(key)){
+        throw new TypeError("The key contained in the package description must be a string.");
+    }
+    
+    if (!TypeUtil.isString(packageURL)){
+        throw new TypeEror("The packageURL contained in the package description must be a string")
+    }
+    
+    if (!TypeUtil.isString(packageType)){
+        throw new TypeEror("The packageType contained in the package description must be a string")
+    }
+};
+
+var isEmptyString = function isEmptyString(string){
+  return /^\s*$/.test(string);
+};
 
 
 //-------------------------------------------------------------------------------
