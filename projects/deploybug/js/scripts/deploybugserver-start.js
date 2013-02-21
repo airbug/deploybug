@@ -15,7 +15,7 @@ var bugpack = require('bugpack').context(module);
 // BugPack
 //-------------------------------------------------------------------------------
 
-var deployBugServer = bugpack.require('deploybug.DeployBugServer');
+var DeployBugServer = bugpack.require('deploybug.DeployBugServer');
 
 
 //-------------------------------------------------------------------------------
@@ -26,4 +26,4 @@ var deployBugServer = bugpack.require('deploybug.DeployBugServer');
 // var deployBugServer = new DeployBugServer();
 // or var deployBugServer = bugpack.require('deploybug.DeployBugServer');
 
-deployBugServer.start();
+DeployBugServer.start();

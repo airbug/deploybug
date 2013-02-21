@@ -6,8 +6,6 @@
 
 //@Export('DeployBugClient')
 
-//@Require('bugfs.BugFs')
-
 //-------------------------------------------------------------------------------
 // Common Modules
 //-------------------------------------------------------------------------------
@@ -19,8 +17,6 @@ var http = require('http');
 //-------------------------------------------------------------------------------
 // BugPack
 //-------------------------------------------------------------------------------
-
-var BugFs =     bugpack.require('bugfs.BugFs');
 
 //-------------------------------------------------------------------------------
 // Declare Class
@@ -134,6 +130,8 @@ DeployBugClient.startPackage = function(key, serverHostname, serverPort) {
     var options = {
       hostname: serverHostname,
       port: serverPort,
+
+        //TODO QUESTION: Does the "key" value need to be url encoded here?
       path: '/deploybug/packages/' + key + '/start',
       method: 'PUT',
       headers: {}

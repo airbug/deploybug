@@ -46,6 +46,8 @@ var DeployBug = {};
 var packageRegistry = new Map();
 var nodeRegistry = new Map();
 
+
+
 //-------------------------------------------------------------------------------
 // Public Static Methods
 //-------------------------------------------------------------------------------
@@ -95,13 +97,18 @@ DeployBug.updatePackage = function(key, descriptionJSON, callback) {
 DeployBug.deployPackage = function(key, callback) {
     var commandString;
     var options = {};
+
+    //TODO: perhaps all deployed packages should be contained within a .deploybug folder that should exist at the root of the deploybug package.
     var rootpath = __dirname + "/../../../..";
     var description = packageRegistry.get(key);
-    
-    if ( /^node$/i.test(description.packageType) || /^npm$/i.test(packageType)){
-        commandString = 'npm install ' 
+
+    //TODO: Could probably move this to validation during registration
+    if ( /^node$/i.test(description.packageType) || /^npm$/i.test(packageType)) {
+
+        //TODO: From a security perspective. We will want to install the packages using a specific unix user id. OR after the package is installed, we will want to change the owner of the package.
+        commandString = 'npm install '
         options.cwd = path.resolve(rootpath + '/deploybug/');
-        if(!BugFs.existsSync(options.cwd)){
+        if (!BugFs.existsSync(options.cwd)){
             BugFs.createDirectorySync(options.cwd);
         }
         commandString += description.packageURL;
@@ -120,6 +127,8 @@ DeployBug.deployPackage = function(key, callback) {
 DeployBug.startPackage = function(key, callback) {
     var description = packageRegistry.get(key);
     var startScript = description.startScript;
+
+    //TODO: Place the rootpath in a common location where it can be accessed by all functions.
     var rootpath = __dirname + "/../../../..";
     var commandString = 'forever start ' + path.resolve(path.join(rootpath + '/deploybug/node_modules/', description.key, startScript));
     
@@ -152,10 +161,10 @@ DeployBug.getPackageRegistryKeys = function(){
     return packageRegistry.getKeyArray();
 };
 
+
 //-------------------------------------------------------------------------------
 // Private Methods
 //-------------------------------------------------------------------------------
-
 
 var executePackageCommand = function executePackageCommand(key, commandString, options, callback){
     var logs = [];
@@ -183,7 +192,19 @@ var isValidPackageDescription = function isValidPackageDescription(descriptionJS
                                 {name: "packageURL", value: packageURL}, 
                                 {name: "packageType", value: packageType}
     ];
-    
+
+    if(!TypeUtil.isString(key)){
+        throw new TypeError("The key contained in the package description must be a string.");
+    }
+
+    if (!TypeUtil.isString(packageURL)){
+        throw new TypeError("The packageURL contained in the package description must be a string")
+    }
+
+    if (!TypeUtil.isString(packageType)){
+        throw new TypeError("The packageType contained in the package description must be a string")
+    }
+
     requiredProperties.forEach(function(property){
         var name = property.name;
         var value = property.value;
@@ -191,18 +212,11 @@ var isValidPackageDescription = function isValidPackageDescription(descriptionJS
             throw new Error("Invalid package description. " + name + " is required.");
         }
     });
-    
-    if(!TypeUtil.isString(key)){
-        throw new TypeError("The key contained in the package description must be a string.");
-    }
-    
-    if (!TypeUtil.isString(packageURL)){
-        throw new TypeError("The packageURL contained in the package description must be a string")
-    }
-    
-    if (!TypeUtil.isString(packageType)){
-        throw new TypeError("The packageType contained in the package description must be a string")
-    }
+
+    //TODO: Add url validation for packageURL
+    //QUESTION: Should we validate the packageURL exists here?
+    //TODO: validate the packageType is of a supported type
+    //QUESTION: Any limitations on the supported characters or keywords of the "key"
 };
 
 var isEmptyString = function isEmptyString(string){

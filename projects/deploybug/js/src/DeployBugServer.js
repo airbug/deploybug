@@ -1,3 +1,6 @@
+//TODO LIST
+// 1) Security. How do we protect these api endpoints?
+
 //-------------------------------------------------------------------------------
 // Annotations
 //-------------------------------------------------------------------------------
@@ -6,8 +9,8 @@
 
 //@Export('DeployBugServer')
 
-//@Require('bugfs.BugFs')
 //@Require('deploybug.DeployBug')
+
 
 //-------------------------------------------------------------------------------
 // Requires
@@ -19,8 +22,8 @@ var http = require('http');
 var path = require('path');
 
 var bugpack =   require('bugpack').context(module);
-var BugFs =     bugpack.require('bugfs.BugFs');
 var DeployBug = bugpack.require('deploybug.DeployBug');
+
 
 //-------------------------------------------------------------------------------
 // Build App
@@ -73,6 +76,7 @@ DeployBugServer.enableRoutes = function(app, express, callback){
     });
 
     app.namespace('/deploybug/packages', function(){ //DONOT DOUBLE NEST NAMESPACES!! TODO: edit express-namespaces to allow nesting
+
         app.get('/registry/index', function(req, res){
              var packageRegistryKeys = DeployBug.getPackageRegistryKeys();
              res.json({"packageRegistryKeys": packageRegistryKeys});
@@ -81,7 +85,7 @@ DeployBugServer.enableRoutes = function(app, express, callback){
 
          app.get('/registry/:key', function(req, res){
              var key = req.params.key;
-             var description = DeployBug.packageRegistry.get(key);
+             var description = DeployBug.getPackageRegistryDescriptionByKey(key);
              res.json(description);
              res.end();
          });
@@ -144,6 +148,7 @@ DeployBugServer.enableRoutes = function(app, express, callback){
          });
          
          app.put(':key/start', function(req, res){
+             //TODO: If we url encoded the "key" before the request was sent, does it need to be decoded here?
              var key = req.params.key;
              DeployBug.startPackage(key, function(error, logs){
                  res.send("\n logs: " + logs + "\n errors: " + error);
@@ -169,6 +174,8 @@ DeployBugServer.enableRoutes = function(app, express, callback){
 DeployBugServer.start = function(){
     console.log("Starting DeployBugServer...");
     var app = DeployBugServer.app();
+
+    //TODO: Allow this value to be configurable using a configuration json file.
     var port = DeployBugServer.port || 8000;
 
     // Create Server

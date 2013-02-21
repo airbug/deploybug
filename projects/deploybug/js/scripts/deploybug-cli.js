@@ -11,7 +11,6 @@
 //-------------------------------------------------------------------------------
 
 var bugpack = require('bugpack').context(module);
-var BugFs = bugpack.require('bugfs.BugFs');
 var path = require('path');
 var http = require('http');
 
@@ -20,7 +19,8 @@ var http = require('http');
 // BugPack
 //-------------------------------------------------------------------------------
 
-var DeployBugClient =    bugpack.require('deploybug.DeployBugClient');
+var BugFs =             bugpack.require('bugfs.BugFs');
+var DeployBugClient =   bugpack.require('deploybug.DeployBugClient');
 
 
 //-------------------------------------------------------------------------------
