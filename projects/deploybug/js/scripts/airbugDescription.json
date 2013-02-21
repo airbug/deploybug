@@ -1,0 +1,1 @@
+{"key": "airbugserver", "packageURL": "https://s3.amazonaws.com/airbug-sung/airbugserver-0.0.1.tgz", "packageType": "node", "global": true, "startScriptPath": "../node_modules/airbugserver/scripts/start.js", "nodes": []}
