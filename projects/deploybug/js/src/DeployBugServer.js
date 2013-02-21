@@ -138,7 +138,7 @@ DeployBugServer.enableRoutes = function(app, express, callback){
               *  } req.body
               */
              DeployBug.deployPackage(key, function(error, logs){
-                 res.json({"logs": logs, "errors": error});
+                 res.send("\n logs: " + logs + "\n errors: " + error);
                  res.end();
              });
          });
@@ -146,7 +146,7 @@ DeployBugServer.enableRoutes = function(app, express, callback){
          app.put(':key/start', function(req, res){
              var key = req.params.key;
              DeployBug.startPackage(key, function(error, logs){
-                 res.json({"logs": logs, "errors": error});
+                 res.send("\n logs: " + logs + "\n errors: " + error);
                  res.end();
              });
         });
@@ -154,24 +154,13 @@ DeployBugServer.enableRoutes = function(app, express, callback){
          app.put(':key/stop', function(req, res){
              var key = req.params.key;
              DeployBug.stopPackage(key, function(error, logs){
-                 res.json({"logs": logs, "errors": error});
+                 res.send("\n logs: " + logs + "\n errors: " + error);
                  res.end();
              });
          });
     });
     
-    app.namespace('/deploybug/nodes', function(){
-        app.get('/registry/index', function(){
-            
-        });
-
-        app.get('/registry/:key', function(){
-            
-        });
-
-        app.post('/register', function(){
-            
-        });
+    app.namespace('/deploybug/nodes', function(){  //TODO: Routes for nodes
     });
 
     callback();
