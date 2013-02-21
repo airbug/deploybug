@@ -94,24 +94,39 @@ DeployBugServer.enableRoutes = function(app, express, callback){
               *  key: string,
               *  packageURL: (string | Path),
               *  packageType: string,
-              *  deployScriptPath: (string | Path), //unneccesary. should be same deploybug script for all deploybug packages
+              *  deployScriptPath: (string | Path), //unneccesary. should be same deploybug script for all deploybug packages based on package type
               *  startScriptPath: (string | Path),
               *  stopScriptPath: (string | Path),
               *  nodes: Array.<{hostname: string, port: number, type: string }>
               * } description
               */
-             var description = req.body;
-             console.log('reques body: '+ description);
-             DeployBug.registerPackage(description, function(error){
+             var descriptionJSON = req.body;
+             console.log('request body: ' + descriptionJSON);
+             DeployBug.registerPackage(descriptionJSON, function(error){
                  if(!error){
-                     console.log('Registry successfully updated with: ' + description.key + description.toString());
-                     res.send('Package registration successful for package ' + description.key);
+                     console.log('Package registration successful for package ' + descriptionJSON.key);
+                     res.send('Package registration successful for package ' + descriptionJSON.key);
+                 } else {
+                     res.send('Registration for package ' + descriptionJSON.key + ' failed. \n Error: ' + error.message + error.stack); //NOTE: REMOVE error.stack for production
+                 }
+                 res.end();
+             });
+
+         });
+         
+         app.put(':key/update', function(req, res){
+             var key = req.params.key;
+             var descriptionJSON = req.body;
+             DeployBug.updatePackage(key, descriptionJSON, function(error){
+                 if(!error){
+                     console.log('Package registration update successful for package ' + key);
+                     res.send('Package registration update successful for package ' + key);
                  } else {
                      res.send('Registration Failed: \n Error: ' + error.message + error.stack); //NOTE: REMOVE error.stack for production
                  }
                  res.end();
              });
-
+             
          });
 
          app.post(':key/deploy', function(req, res) {
@@ -123,7 +138,23 @@ DeployBugServer.enableRoutes = function(app, express, callback){
               *  } req.body
               */
              DeployBug.deployPackage(key, function(error, logs){
-                 res.json({"logs": logs, "error": error});
+                 res.json({"logs": logs, "errors": error});
+                 res.end();
+             });
+         });
+         
+         app.put(':key/start', function(req, res){
+             var key = req.params.key;
+             DeployBug.startPackage(key, function(error, logs){
+                 res.json({"logs": logs, "errors": error});
+                 res.end();
+             });
+        });
+         
+         app.put(':key/stop', function(req, res){
+             var key = req.params.key;
+             DeployBug.stopPackage(key, function(error, logs){
+                 res.json({"logs": logs, "errors": error});
                  res.end();
              });
          });

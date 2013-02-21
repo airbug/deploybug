@@ -85,7 +85,7 @@ DeployBugClient.updatePackage = function(key, descriptionJSON, serverHostname, s
       hostname: serverHostname,
       port: serverPort,
       path: '/deploybug/packages/' + key + '/update',
-      method: 'POST',
+      method: 'PUT',
       headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}
     };
     var req = http.request(options, function(res){  // DRY up this req object
@@ -135,7 +135,7 @@ DeployBugClient.startPackage = function(key, serverHostname, serverPort) {
       hostname: serverHostname,
       port: serverPort,
       path: '/deploybug/packages/' + key + '/start',
-      method: 'POST',
+      method: 'PUT',
       headers: {}
     };
     var req = http.request(options, function(res){
@@ -159,7 +159,7 @@ DeployBugClient.stopPackage = function(key, serverHostname, serverPort) {
       hostname: serverHostname,
       port: serverPort,
       path: '/deploybug/packages/' + key + '/stop',
-      method: 'POST',
+      method: 'PUT',
       headers: {}
     };
     var req = http.request(options, function(res){
