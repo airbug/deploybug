@@ -56,11 +56,8 @@ var nodeRegistry = new Map();
  *  port: integer,
  *  packageURL: string,
  *  packageType: string,
- *  deployScript: (string | Path),
  *  startScript: (string | Path),
- *  stopScript: (string | Path),
- *  restartScript: (string | Path)
- * }} description,
+ * }} descriptionJSON,
  * @param {function(Error)} callback
  *
  */
@@ -96,30 +93,72 @@ DeployBug.updatePackage = function(key, descriptionJSON, callback) {
 };
 
 DeployBug.deployPackage = function(key, callback) {
-    var logs = [];
-    var description = packageRegistry.get(key);
-    var packageType = description.packageType;
     var commandString;
     var options = {};
     var rootpath = __dirname + "/../../../..";
+    var description = packageRegistry.get(key);
     
-    if ( /^node$/i.test(packageType) || /^npm$/i.test(packageType)){
+    if ( /^node$/i.test(description.packageType) || /^npm$/i.test(packageType)){
         commandString = 'npm install ' 
-        if(description.global){
-            commandString += '-g';
-        } else {
-            options.cwd = path.resolve(rootpath + '/deploybug/');
-            if(!BugFs.existsSync(options.cwd)){
-                BugFs.createDirectorySync(options.cwd);
-            }
+        options.cwd = path.resolve(rootpath + '/deploybug/');
+        if(!BugFs.existsSync(options.cwd)){
+            BugFs.createDirectorySync(options.cwd);
         }
-        commandString += description.packageURL;    // Should this be wrapped in forever as well? i.e. forever -c npm install <packageURL>
-                                                                    // TODO: extract -g flag as an option
-                                                                    //global /usr/local/share/npm/lib/node_modules/airbugserver
-                                                                    //local  ../node_modules/airbugserver => airbug/node_modules/deploybug/node_modules/airbugserver   //cwd = airbug/node_modules/deploybug/scripts
+        commandString += description.packageURL;
+        executePackageCommand(key, commandString, options, callback);
+        
     } else {
-        commandString = 'forever start ' + description.deployScript;
+        callback(new TypeError("DeployBug currently only supports node packages"))
     }
+
+    // registration retrieval
+    // iterate through nodes
+        // shell into node
+        // download and install package
+};
+
+DeployBug.startPackage = function(key, callback) {
+    var description = packageRegistry.get(key);
+    var startScript = description.startScript;
+    var rootpath = __dirname + "/../../../..";
+    var commandString = 'forever start ' + path.resolve(path.join(rootpath + '/deploybug/node_modules/', description.key, startScript));
+    
+    executePackageCommand(key, commandString, {}, callback);
+};
+
+DeployBug.stopPackage = function(key, callback) {
+    var description = packageRegistry.get(key);
+    var startScript = description.startScript;
+    var rootpath = __dirname + "/../../../..";
+    var commandString = 'forever stop ' + path.resolve(path.join(rootpath + '/deploybug/node_modules/', description.key, startScript));
+    
+    executePackageCommand(key, commandString, {}, callback);
+};
+
+DeployBug.restartPackage = function(key, callback) {
+    var description = packageRegistry.get(key);
+    var startScript = description.startScript;
+    var rootpath = __dirname + "/../../../..";
+    var commandString = 'forever restart ' + path.resolve(path.join(rootpath + '/deploybug/node_modules/', description.key, startScript));
+    
+    executePackageCommand(key, commandString, {}, callback);
+};
+
+DeployBug.getPackageRegistryDescriptionByKey = function(key){
+    return packageRegistry.get(key);
+};
+    
+DeployBug.getPackageRegistryKeys = function(){
+    return packageRegistry.getKeyArray();
+};
+
+//-------------------------------------------------------------------------------
+// Private Methods
+//-------------------------------------------------------------------------------
+
+
+var executePackageCommand = function executePackageCommand(key, commandString, options, callback){
+    var logs = [];
     
     child_process.exec(commandString, options, function (error, stdout, stderr) {
         console.log('stdout: ' + stdout);
@@ -134,95 +173,7 @@ DeployBug.deployPackage = function(key, callback) {
             callback(null, logs.join("\n"));
         }
     });
-
-    
-    // registration retrieval
-    // iterate through nodes
-        // shell into node
-        // download and install package
 };
-
-DeployBug.startPackage = function(key, callback) {
-    var logs = [];
-    var description = packageRegistry.get(key);
-    var startScript = description.startScript;
-    var rootpath = __dirname + "/../../../..";
-    var commandString = 'forever start '
-    
-    if (description.global) {
-        startScript = path.resolve(path.join('/usr/local/share/npm/lib/node_modules/', description.key, startScript));
-    } else {
-        startScript = path.resolve(path.join(rootpath + '/deploybug/node_modules/', description.key, startScript));
-    }
-    commandString += startScript;
-    
-    child_process.exec(commandString, function (error, stdout, stderr) {
-        console.log('stdout: ' + stdout);
-        console.log('stderr: ' + stderr);
-        logs.push('stdout: ' + stdout);
-        logs.push('stderr: ' + stderr);
-        if (error !== null) {
-            console.log('exec error: ' + error);
-            logs.push('exec error: ' + error);
-            callback(error, logs.join("\n"));
-        } else {
-            callback(null, logs.join("\n"));
-        }
-    });
-
-    // registration retrieval
-    // run start script with forever
-    
-};
-
-DeployBug.stopPackage = function(key, callback) {
-    var logs = [];
-    var description = packageRegistry.get(key);
-    var startScript = description.startScript;
-    var rootpath = __dirname + "/../../../..";
-    var commandString = 'forever stop ';
-    
-    if (description.global) {
-        startScript = path.resolve(path.join('/usr/local/share/npm/lib/node_modules/', description.key, startScript));
-    } else {
-        startScript = path.resolve(path.join(rootpath + '/deploybug/node_modules/', description.key, startScript));
-    }
-    commandString += startScript;
-    
-    child_process.exec(commandString, function (error, stdout, stderr) {
-        console.log('stdout: ' + stdout);
-        console.log('stderr: ' + stderr);
-        logs.push('stdout: ' + stdout);
-        logs.push('stderr: ' + stderr);
-        if (error !== null) {
-            console.log('exec error: ' + error);
-            logs.push('exec error: ' + error);
-            callback(error, logs.join("\n"));
-        } else {
-            callback(null, logs.join("\n"));
-        }
-    });
-
-    // registration retrieval
-    // run start script with forever
-    
-    
-    // registration retrieval
-    // stop process with forever
-    
-};
-
-DeployBug.getPackageRegistryDescriptionByKey = function(key){
-        return packageRegistry.get(key);
-};
-    
-DeployBug.getPackageRegistryKeys = function(){
-        return packageRegistry.getKeyArray();
-};
-
-//-------------------------------------------------------------------------------
-// Private Methods
-//-------------------------------------------------------------------------------
 
 var isValidPackageDescription = function isValidPackageDescription(descriptionJSON){
     var key = descriptionJSON.key;
@@ -246,11 +197,11 @@ var isValidPackageDescription = function isValidPackageDescription(descriptionJS
     }
     
     if (!TypeUtil.isString(packageURL)){
-        throw new TypeEror("The packageURL contained in the package description must be a string")
+        throw new TypeError("The packageURL contained in the package description must be a string")
     }
     
     if (!TypeUtil.isString(packageType)){
-        throw new TypeEror("The packageType contained in the package description must be a string")
+        throw new TypeError("The packageType contained in the package description must be a string")
     }
 };
 
