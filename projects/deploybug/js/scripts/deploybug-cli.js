@@ -14,7 +14,6 @@ var bugpack = require('bugpack').context(module);
 var path = require('path');
 var http = require('http');
 
-
 //-------------------------------------------------------------------------------
 // BugPack
 //-------------------------------------------------------------------------------
@@ -55,6 +54,7 @@ var findFlagValues = (function(){
         '-d': 'description',
         '--description': 'description'
     };
+    
     var flagRegExp = /^(-|--)/;
     for (var i = 3; i < argv.length; i++ ) {
         var flag = argv[i];
@@ -134,6 +134,17 @@ if (command === '-h' || command === '--help') {
     console.log('Waiting for response from DeployBugServer...');
 
     DeployBugClient.stopPackage(key, server, port);
+
+}     else if (command === "restart") {
+        var key = options['key'];
+        var server = options['server'];
+        var port = options['port'];
+        console.log('key: ' + key);
+        console.log('server: ' + server);
+        console.log('port: ' + port);
+        console.log('Waiting for response from DeployBugServer...');
+
+        DeployBugClient.restartPackage(key, server, port);
 
 } else {
     throw new Error("Unknown command '" + command + "'");
