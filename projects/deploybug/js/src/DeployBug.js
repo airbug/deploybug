@@ -43,10 +43,6 @@ var DeployBug = {};
 // Private Static Variables
 //-------------------------------------------------------------------------------
 
-var packageRegistry = new Map();
-var nodeRegistry = new Map();
-
-
 
 //-------------------------------------------------------------------------------
 // Public Static Methods
@@ -54,21 +50,21 @@ var nodeRegistry = new Map();
 
 /**
  * @param {{
+ *  key: string,
  *  hostname: string,
- *  port: integer,
+ *  port: number,
  *  packageURL: string,
  *  packageType: string,
- *  startScript: (string | Path),
- * }} descriptionJSON,
+ *  startScript: string
+ * }} descriptionJSON
  * @param {function(Error)} callback
- *
  */
 DeployBug.registerPackage = function(descriptionJSON, callback) {
     var key = descriptionJSON.key;
     try{
         if(!DeployBug.getPackageRegistryDescriptionByKey(key)) {
-            isValidPackageDescription(descriptionJSON);
-            packageRegistry.put(descriptionJSON.key, descriptionJSON);
+            PackageValidator.validatePackageDescription(descriptionJSON);
+            DeployBug.setPackageRegistryDescription(descriptionJSON.key, descriptionJSON);
             callback();
         } else {
             throw new Error("Package is already registered.")
@@ -78,11 +74,23 @@ DeployBug.registerPackage = function(descriptionJSON, callback) {
     }
 };
 
+/**
+ *  @param {string} key,
+ *  @param {{
+ *  key: string,
+ *  hostname: string,
+ *  port: number,
+ *  packageURL: string,
+ *  packageType: string,
+ *  startScript: string
+ * }} descriptionJSON
+ * @param {function(Error)} callback
+ */
 DeployBug.updatePackage = function(key, descriptionJSON, callback) {
     try{
         if(key === descriptionJSON.key){
-            isValidPackageDescription(descriptionJSON);
-            packageRegistry.put(descriptionJSON.key, descriptionJSON);
+            PackageValidator.validatePackageDescription(descriptionJSON);
+            DeployBug.setPackageRegistryDescription(descriptionJSON.key, descriptionJSON);
             callback(); 
         } else {
             throw new Error("Package key does not match package description.")
@@ -94,13 +102,17 @@ DeployBug.updatePackage = function(key, descriptionJSON, callback) {
     //update or create
 };
 
+/**
+ *  @param {string} key
+ *  @param {function(Error)} callback
+ */
 DeployBug.deployPackage = function(key, callback) {
     var commandString;
     var options = {};
 
     //TODO: perhaps all deployed packages should be contained within a .deploybug folder that should exist at the root of the deploybug package.
     var rootpath = __dirname + "/../../../..";
-    var description = packageRegistry.get(key);
+    var description = DeployBug.getPackageRegistryDescriptionByKey(key);
 
     //TODO: Could probably move this to validation during registration
     if ( /^node$/i.test(description.packageType) || /^npm$/i.test(packageType)) {
@@ -112,7 +124,7 @@ DeployBug.deployPackage = function(key, callback) {
             BugFs.createDirectorySync(options.cwd);
         }
         commandString += description.packageURL;
-        executePackageCommand(key, commandString, options, callback);
+        PackageCommand.execute(key, commandString, options, callback);
         
     } else {
         callback(new TypeError("DeployBug currently only supports node packages"))
@@ -124,41 +136,83 @@ DeployBug.deployPackage = function(key, callback) {
         // download and install package
 };
 
+/**
+ *  @param {string} key
+ *  @param {function(Error)} callback
+ */
 DeployBug.startPackage = function(key, callback) {
-    var description = packageRegistry.get(key);
+    var description = DeployBug.getPackageRegistryDescriptionByKey(key);
     var startScript = description.startScript;
 
     //TODO: Place the rootpath in a common location where it can be accessed by all functions.
     var rootpath = __dirname + "/../../../..";
     var commandString = 'forever start ' + path.resolve(path.join(rootpath + '/deploybug/node_modules/', description.key, startScript));
     
-    executePackageCommand(key, commandString, {}, callback);
+    PackageCommand.execute(key, commandString, {}, callback);
 };
 
+/**
+ *  @param {string} key
+ *  @param {function(Error)} callback
+ */
 DeployBug.stopPackage = function(key, callback) {
-    var description = packageRegistry.get(key);
+    var description = DeployBug.getPackageRegistryDescriptionByKey(key);
     var startScript = description.startScript;
     var rootpath = __dirname + "/../../../..";
     var commandString = 'forever stop ' + path.resolve(path.join(rootpath + '/deploybug/node_modules/', description.key, startScript));
     
-    executePackageCommand(key, commandString, {}, callback);
+    PackageCommand.execute(key, commandString, {}, callback);
 };
 
+/**
+ *  @param {string} key
+ *  @param {function(Error)} callback
+ */
 DeployBug.restartPackage = function(key, callback) {
-    var description = packageRegistry.get(key);
+    var description = DeployBug.getPackageRegistryDescriptionByKey(key);
     var startScript = description.startScript;
     var rootpath = __dirname + "/../../../..";
     var commandString = 'forever restart ' + path.resolve(path.join(rootpath + '/deploybug/node_modules/', description.key, startScript));
     
-    executePackageCommand(key, commandString, {}, callback);
+    PackageCommand.execute(key, commandString, {}, callback);
 };
 
+/**
+ *  @param {string} key
+ *  @return {{
+ *  key: string,
+ *  hostname: string,
+ *  port: number,
+ *  packageURL: string,
+ *  packageType: string,
+ *  startScript: string
+ *  }}
+ */
 DeployBug.getPackageRegistryDescriptionByKey = function(key){
-    return packageRegistry.get(key);
+    return PackageRegistry.get(key);
 };
-    
+
+/**
+ *  @param {string} key
+ *  @param {{
+ *  key: string,
+ *  hostname: string,
+ *  port: integer,
+ *  packageURL: string,
+ *  packageType: string,
+ *  startScript: string
+ *  }} descriptionJSON 
+ */
+DeployBug.setPackageRegistryDescription = function(key, descriptionJSON){
+    PackageRegistry.put(key, descriptionJSON);
+};
+
+/**
+ *  @param {string} key
+ *  @return {Array}
+ */
 DeployBug.getPackageRegistryKeys = function(){
-    return packageRegistry.getKeyArray();
+    return PackageRegistry.getKeyArray();
 };
 
 
@@ -166,63 +220,90 @@ DeployBug.getPackageRegistryKeys = function(){
 // Private Methods
 //-------------------------------------------------------------------------------
 
-var executePackageCommand = function executePackageCommand(key, commandString, options, callback){
-    var logs = [];
+var PackageRegistry = new Map();
+
+var PackageCommand = {
+    execute: function(key, commandString, options, callback){
+        var logs = [];
     
-    child_process.exec(commandString, options, function (error, stdout, stderr) {
-        console.log('stdout: ' + stdout);
-        console.log('stderr: ' + stderr);
-        logs.push('stdout: ' + stdout);
-        logs.push('stderr: ' + stderr);
-        if (error !== null) {
-            console.log('exec error: ' + error);
-            logs.push('exec error: ' + error);
-            callback(error, logs.join("\n"));
-        } else {
-            callback(null, logs.join("\n"));
+        child_process.exec(commandString, options, function (error, stdout, stderr) {
+            console.log('stdout: ' + stdout);
+            console.log('stderr: ' + stderr);
+            logs.push('stdout: ' + stdout);
+            logs.push('stderr: ' + stderr);
+            if (error !== null) {
+                console.log('exec error: ' + error);
+                logs.push('exec error: ' + error);
+                callback(error, logs.join("\n"));
+            } else {
+                callback(null, logs.join("\n"));
+            }
+        });
+    }
+};
+
+var PackageValidator = {
+    /**
+    *  @param {{
+    *  key: string,
+    *  hostname: string,
+    *  port: integer,
+    *  packageURL: string,
+    *  packageType: string,
+    *  startScript: string
+    *  }} descriptionJSON
+    */
+    validatePackageDescription: function(descriptionJSON){
+        var key = descriptionJSON.key;
+        var packageURL = descriptionJSON.packageURL;
+        var packageType = descriptionJSON.packageType;
+        var requiredProperties = [  {name: "key", value: key},
+                                    {name: "packageURL", value: packageURL}, 
+                                    {name: "packageType", value: packageType}
+        ];
+
+        if(!TypeUtil.isString(key)){
+            throw new TypeError("The key contained in the package description must be a string.");
         }
-    });
-};
 
-var isValidPackageDescription = function isValidPackageDescription(descriptionJSON){
-    var key = descriptionJSON.key;
-    var packageURL = descriptionJSON.packageURL;
-    var packageType = descriptionJSON.packageType;
-    var requiredProperties = [  {name: "key", value: key},
-                                {name: "packageURL", value: packageURL}, 
-                                {name: "packageType", value: packageType}
-    ];
-
-    if(!TypeUtil.isString(key)){
-        throw new TypeError("The key contained in the package description must be a string.");
-    }
-
-    if (!TypeUtil.isString(packageURL)){
-        throw new TypeError("The packageURL contained in the package description must be a string")
-    }
-
-    if (!TypeUtil.isString(packageType)){
-        throw new TypeError("The packageType contained in the package description must be a string")
-    }
-
-    requiredProperties.forEach(function(property){
-        var name = property.name;
-        var value = property.value;
-        if(isEmptyString(value) || value == null){
-            throw new Error("Invalid package description. " + name + " is required.");
+        if (!TypeUtil.isString(packageURL)){
+            throw new TypeError("The packageURL contained in the package description must be a string")
         }
-    });
 
-    //TODO: Add url validation for packageURL
-    //QUESTION: Should we validate the packageURL exists here?
-    //TODO: validate the packageType is of a supported type
-    //QUESTION: Any limitations on the supported characters or keywords of the "key"
+        if (!TypeUtil.isString(packageType)){
+            throw new TypeError("The packageType contained in the package description must be a string")
+        }
+
+        requiredProperties.forEach(function(property){
+            var name = property.name;
+            var value = property.value;
+            if(isEmptyString(value) || value == null){
+                throw new Error("Invalid package description. " + name + " is required.");
+            }
+        });
+
+        PackageValidator.validatePackageType(packageType);
+        PackageValidator.validatePackageURL(packageURL);
+
+        var isEmptyString = function isEmptyString(string){
+          return /^\s*$/.test(string);
+        };
+
+        //TODO: Add url validation for packageURL
+        //QUESTION: Should we validate the packageURL exists here?
+        //TODO: validate the packageType is of a supported type
+        //QUESTION: Any limitations on the supported characters or keywords of the "key"
+    },
+    
+    validatePackageType: function(type){
+
+    },
+    
+    validatePackageURL: function(url){
+        
+    }
+    
 };
-
-var isEmptyString = function isEmptyString(string){
-  return /^\s*$/.test(string);
-};
-
 
 //-------------------------------------------------------------------------------
 // Exports
