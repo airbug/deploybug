@@ -20,8 +20,12 @@ var express = require("express");
 require('express-namespace');
 var http = require('http');
 var path = require('path');
-
 var bugpack =   require('bugpack').context(module);
+
+//-------------------------------------------------------------------------------
+// BugPack
+//-------------------------------------------------------------------------------
+
 var DeployBug = bugpack.require('deploybug.DeployBug');
 
 
@@ -34,17 +38,7 @@ var DeployBugServer = {
 };
 
 DeployBugServer.app = function(){
-    var app = express();
-
-    DeployBugServer.configure(app, express, function(){
-        console.log("DeployBugServer configured");
-    });
-
-    DeployBugServer.enableRoutes(app, express, function(){
-        console.log("DeployBugServer routes enabled");
-    });
-
-    return app;
+    return express();
 };
 
 DeployBugServer.configure = function(app, express, callback){
@@ -98,10 +92,7 @@ DeployBugServer.enableRoutes = function(app, express, callback){
               *  key: string,
               *  packageURL: (string | Path),
               *  packageType: string,
-              *  deployScriptPath: (string | Path), //unneccesary. should be same deploybug script for all deploybug packages based on package type
               *  startScriptPath: (string | Path),
-              *  stopScriptPath: (string | Path),
-              *  nodes: Array.<{hostname: string, port: number, type: string }>
               * } description
               */
              var descriptionJSON = req.body;
@@ -163,6 +154,14 @@ DeployBugServer.enableRoutes = function(app, express, callback){
                  res.end();
              });
          });
+         
+         app.put(':key/restart', function(req, res){
+             var key = req.params.key;
+             DeployBug.restartPackage(key, function(error, logs){
+                 res.send("\n logs: " + logs + "\n errors: " + error);
+                 res.end();
+             });
+         });
     });
     
     app.namespace('/deploybug/nodes', function(){  //TODO: Routes for nodes
@@ -177,6 +176,14 @@ DeployBugServer.start = function(){
 
     //TODO: Allow this value to be configurable using a configuration json file.
     var port = DeployBugServer.port || 8000;
+
+    DeployBugServer.configure(app, express, function(){
+        console.log("DeployBugServer configured");
+    });
+
+    DeployBugServer.enableRoutes(app, express, function(){
+        console.log("DeployBugServer routes enabled");
+    });
 
     // Create Server
     http.createServer(app).listen(port, function(){
