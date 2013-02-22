@@ -29,3 +29,6 @@ buildbug.json
 
 # package descriptions
 temp
+
+# config files
+config
