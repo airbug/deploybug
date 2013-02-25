@@ -26,24 +26,25 @@ var DeployBugClient =   bugpack.require('deploybug.DeployBugClient');
 // 
 //-------------------------------------------------------------------------------
 
-var argv = process.argv;
-var command = argv[2];
-var options = {};
-if (!command) {
-    throw new Error("Must specify a command such as start or stop");
-}
 
 var toJSON = function toJSON(jsonString) {
-    var json;
     try {
-        json = JSON.parse(jsonString);
-        return json;
+        return JSON.parse(jsonString);
     } catch (e) {
+        console.log("Cannot parse to JSON: " + e);
         return null;
     }
 };
 
-var findFlagValues = (function(){
+var argv = process.argv;
+var command = argv[2];
+var options = {};
+var configFilePath = '../config/DeployBugClient.config.json';
+var configJSON = toJSON(BugFs.readFileSync(path.resolve(configFilePath), 'utf8'));
+var environment = process.env.NODE_ENV || "development";
+
+var setOptions = (function setOptions(){
+    // find flag values
     var flags = {
         '-s': 'server',
         '--server': 'server',
@@ -62,11 +63,58 @@ var findFlagValues = (function(){
             options[flags[flag]] = argv[i + 1];
         }
     }
+
+    // replace undefined values with defaults
+    var optionProperties = ["server", "port", "key", "description"];
+    for(var index in optionProperties){
+        var property = optionProperties[index];
+        if (options[property] == null) {
+            options[property] = configJSON[environment][property];
+        }
+    }
 })();
+
+//-------------------------------------------------------------------------------
+// 
+//-------------------------------------------------------------------------------
+
+if (!command) {
+    throw new Error("Must specify a command such as start or stop");
+}
 
 if (command === '-h' || command === '--help') {
     var helpText = BugFs.readFileSync(path.resolve('scripts/help.txt'), 'utf8');
     console.log(helpText);
+
+} else if (command === 'config' || command === 'configure') {
+    var server = options['server'];
+    var port = options['port'];
+    var key = options['key'];
+    var description = options['description'];
+    
+    if(server){
+        configJSON[environment]["server"] = server;
+        console.log("Server hostname for '" + environment + "' environment updated to " + server);
+    }
+    
+    if(port){
+        configJSON[environment]["port"] = parseInt(port, 10);
+        console.log("Server port for '" + environment + "' environment updated to " + port);
+    }
+    
+    if(key){
+        configJSON[environment]["key"] = key;
+        console.log("Default key for '" + environment + "' environment is now " + key);
+    }
+    
+    if (description){
+        configJSON[environment]["description"] = description;
+        console.log("Default description file path for '" + environment + "' environment is now " + description);
+    }
+
+    BugFs.writeFileSync(configFilePath, JSON.stringify(configJSON), 'utf8');
+    console.log("Config file saved.");
+
 
 } else if (command === 'register') {
     var descriptionPath = path.resolve(options['description']);
@@ -76,14 +124,13 @@ if (command === '-h' || command === '--help') {
     console.log('description string: ' + JSON.stringify(descriptionJSON));
     console.log('server: ' + server);
     console.log('port: ' + port);
-    
+
     if(descriptionJSON){
         console.log('Waiting for response from DeployBugServer...');
         DeployBugClient.registerPackage(descriptionJSON, server, port);
     } else {
         console.log(descriptionPath + " is not valid JSON");
     }
-
 
 } else if (command === "update") {
     var key = options['key'];
@@ -135,16 +182,16 @@ if (command === '-h' || command === '--help') {
 
     DeployBugClient.stopPackage(key, server, port);
 
-}     else if (command === "restart") {
-        var key = options['key'];
-        var server = options['server'];
-        var port = options['port'];
-        console.log('key: ' + key);
-        console.log('server: ' + server);
-        console.log('port: ' + port);
-        console.log('Waiting for response from DeployBugServer...');
+} else if (command === "restart") {
+    var key = options['key'];
+    var server = options['server'];
+    var port = options['port'];
+    console.log('key: ' + key);
+    console.log('server: ' + server);
+    console.log('port: ' + port);
+    console.log('Waiting for response from DeployBugServer...');
 
-        DeployBugClient.restartPackage(key, server, port);
+    DeployBugClient.restartPackage(key, server, port);
 
 } else {
     throw new Error("Unknown command '" + command + "'");
