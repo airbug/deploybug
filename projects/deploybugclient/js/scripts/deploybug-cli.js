@@ -39,11 +39,29 @@ var toJSON = function toJSON(jsonString) {
 var argv = process.argv;
 var command = argv[2];
 var options = {};
-var configFilePath = '../config/DeployBugClient.config.json';
-var configJSON = toJSON(BugFs.readFileSync(path.resolve(configFilePath), 'utf8'));
+var configFilePath = path.resolve(__dirname, '../config/DeployBugClient.config.json');
 var environment = process.env.NODE_ENV || "development";
 
-var setOptions = (function setOptions(){
+// NOTE: Currently only server and port defaults are supported.
+// Supporting key and description defaults may cause more unintended consequences than benefits.
+var getDefaultOptions = (function(){
+    if(BugFs.existsSync(configFilePath)){
+        var configJSON = toJSON(BugFs.readFileSync(configFilePath, 'utf8'));
+    } else {
+        var configJSON = {
+            "development": {
+                "server": "localhost",
+                "port": 8000
+            }
+        };
+
+        if(!BugFs.existsSync(path.resolve(__dirname, '../config'))){
+            BugFs.createDirectorySync(path.resolve(__dirname, '../config'));
+        }
+    }
+})();
+
+var setOptions = (function(){
     // find flag values
     var flags = {
         '-s': 'server',
@@ -65,7 +83,7 @@ var setOptions = (function setOptions(){
     }
 
     // replace undefined values with defaults
-    var optionProperties = ["server", "port", "key", "description"];
+    var optionProperties = ["server", "port"];
     for(var index in optionProperties){
         var property = optionProperties[index];
         if (options[property] == null) {
@@ -87,6 +105,7 @@ if (command === '-h' || command === '--help') {
     console.log(helpText);
 
 } else if (command === 'config' || command === 'configure') {
+    // Note: Configuration options persist in the ../config/DeployBugClient.config.json file.
     var server = options['server'];
     var port = options['port'];
     var key = options['key'];
@@ -100,16 +119,6 @@ if (command === '-h' || command === '--help') {
     if(port){
         configJSON[environment]["port"] = parseInt(port, 10);
         console.log("Server port for '" + environment + "' environment updated to " + port);
-    }
-    
-    if(key){
-        configJSON[environment]["key"] = key;
-        console.log("Default key for '" + environment + "' environment is now " + key);
-    }
-    
-    if (description){
-        configJSON[environment]["description"] = description;
-        console.log("Default description file path for '" + environment + "' environment is now " + description);
     }
 
     BugFs.writeFileSync(configFilePath, JSON.stringify(configJSON), 'utf8');
