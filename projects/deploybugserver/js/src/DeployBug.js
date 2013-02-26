@@ -89,17 +89,21 @@ DeployBug.registerPackage = function(descriptionJSON, callback) {
 DeployBug.updatePackage = function(key, descriptionJSON, callback) {
     try{
         if(key === descriptionJSON.key){
-            PackageValidator.validatePackageDescription(descriptionJSON);
-            DeployBug.setPackageRegistryDescription(descriptionJSON.key, descriptionJSON);
-            callback(); 
+            if(!DeployBug.getPackageRegistryDescriptionByKey(key)){
+                throw new Error("Package key does not exist in the registry.");
+            } else {
+                PackageValidator.validatePackageDescription(descriptionJSON);
+                DeployBug.setPackageRegistryDescription(descriptionJSON.key, descriptionJSON);
+                callback();
+            }
         } else {
-            throw new Error("Package key does not match package description.")
+            throw new Error("Package key does not match package description.");
         }
     } catch(error){
         callback(error);
     }
     
-    //update or create
+    //update only
 };
 
 /**
@@ -127,7 +131,7 @@ DeployBug.deployPackage = function(key, callback) {
         PackageCommand.execute(key, commandString, options, callback);
         
     } else {
-        callback(new TypeError("DeployBug currently only supports node packages"))
+        callback(new TypeError("DeployBug currently only supports node packages"));
     }
 
     // registration retrieval

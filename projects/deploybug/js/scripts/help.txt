@@ -9,7 +9,7 @@ actions:
                     deploybug register -d [filepath] -s [server-address] -p [port-number]
                     
     update      Update a package description with the DeployBug server 
-                NOTE: Update will register the description if it is not already registered
+                NOTE: Update will NOT register new descriptions
                     deploybug update --key [key] --description [filepath] --server [server-address] --port [port-number]
                     deploybug update -k [key] -d [filepath] -s [server-address] -p [port-number]
                     
