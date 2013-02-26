@@ -54,10 +54,6 @@ var getDefaultOptions = (function(){
                 "port": 8000
             }
         };
-
-        if(!BugFs.existsSync(path.resolve(__dirname, '../config'))){
-            BugFs.createDirectorySync(path.resolve(__dirname, '../config'));
-        }
     }
 })();
 
@@ -100,7 +96,7 @@ if (!command) {
     throw new Error("Must specify a command such as start or stop");
 }
 
-if (command === '-h' || command === '--help') {
+if (command === '-h' || command === '--help' || command === 'help') {
     var helpText = BugFs.readFileSync(path.resolve('scripts/help.txt'), 'utf8');
     console.log(helpText);
 
@@ -120,7 +116,11 @@ if (command === '-h' || command === '--help') {
         configJSON[environment]["port"] = parseInt(port, 10);
         console.log("Server port for '" + environment + "' environment updated to " + port);
     }
-
+    
+    if (!BugFs.existsSync(path.resolve(__dirname, '../config'))){
+        BugFs.createDirectorySync(path.resolve(__dirname, '../config'));
+    }
+    
     BugFs.writeFileSync(configFilePath, JSON.stringify(configJSON), 'utf8');
     console.log("Config file saved.");
 
