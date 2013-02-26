@@ -1,7 +1,8 @@
 usage: deploybug [action] [options]
 
 actions:
-    -h, --help  Prints Help file
+    help        Prints Help file
+    -h, --help  
     
     register    Register a package description with the DeployBug server
                     deploybug register --description [filepath] --server [server-address] --port [port-number]
@@ -28,6 +29,11 @@ actions:
                     deploybug restart --key [key] --server [server-address] --port [port]
                     deploybug restart -k [key] -s [server-address] -p [port]
                     
+    configure   Sets default configurations. Currently, default server hostname and port number are supported. 
+    config      Configuration defaults persist in the config/DeployBugClient.config.json file of the deploybug module directory. 
+                    deploybug configure --server [server-address] --port [port]
+                    deploybug configure -s [server-address] -p [port]
+
 options:
     -s, --server        Hostname of the DeployBugServer
     -p, --port          Port number of the DeployBugServer
@@ -36,4 +42,3 @@ options:
     
 
 //TODO: Add -v, --version
-//TODO: Add --config
