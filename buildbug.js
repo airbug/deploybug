@@ -34,10 +34,10 @@ var nodejs = enableModule('nodejs');
 //-------------------------------------------------------------------------------
 
 buildProperties({
-    deploybugclient: {
+    deploybug: {
         packageJson: {
-            name: "deploybugclient",
-            version: "0.0.1",
+            name: "deploybug",
+            version: "0.0.2",
             main: "./lib/DeployBugClient.js",
             bin: "bin/deploybug",
             dependencies: {
@@ -48,7 +48,7 @@ buildProperties({
             }
         },
         sourcePaths: [
-            "./projects/deploybugclient/js/src",
+            "./projects/deploybug/js/src",
             "../bugjs/projects/bugjs/js/src",
             '../bugjs/projects/bugflow/js/src',
             '../bugjs/projects/bugboil/js/src',
@@ -57,20 +57,20 @@ buildProperties({
             "../bugunit/projects/bugunit/js/src"
         ],
         scriptPaths: [
-            "./projects/deploybugclient/js/scripts",
+            "./projects/deploybug/js/scripts",
             "../bugunit/projects/bugunit/js/scripts"
         ],
         testPaths: [
             "../bugjs/projects/bugjs/js/test"
         ],
         binPaths: [
-            "./projects/deploybugclient/bin"
+            "./projects/deploybug/bin"
         ]
     },
     deploybugserver: {
         packageJson: {
             name: "deploybugserver",
-            version: "0.0.1",
+            version: "0.0.2",
             main: "./lib/DeployBugServer.js",
             dependencies: {
                 bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.3.tgz"
@@ -133,18 +133,18 @@ buildTarget('local').buildFlow(
             series([
                 targetTask('createNodePackage', {
                     properties: {
-                        packageJson: buildProject.getProperty("deploybugclient.packageJson"),
-                        sourcePaths: buildProject.getProperty("deploybugclient.sourcePaths"),
-                        scriptPaths: buildProject.getProperty("deploybugclient.scriptPaths"),
-                        testPaths: buildProject.getProperty("deploybugclient.testPaths"),
-                        binPaths: buildProject.getProperty("deploybugclient.binPaths")
+                        packageJson: buildProject.getProperty("deploybug.packageJson"),
+                        sourcePaths: buildProject.getProperty("deploybug.sourcePaths"),
+                        scriptPaths: buildProject.getProperty("deploybug.scriptPaths"),
+                        testPaths: buildProject.getProperty("deploybug.testPaths"),
+                        binPaths: buildProject.getProperty("deploybug.binPaths")
                     }
                 }),
                 targetTask('generateBugPackRegistry', {
                     init: function(task, buildProject, properties) {
                         var nodePackage = nodejs.findNodePackage(
-                            buildProject.getProperty("deploybugclient.packageJson.name"),
-                            buildProject.getProperty("deploybugclient.packageJson.version")
+                            buildProject.getProperty("deploybug.packageJson.name"),
+                            buildProject.getProperty("deploybug.packageJson.version")
                         );
                         task.updateProperties({
                             sourceRoot: nodePackage.getBuildPath()
@@ -153,15 +153,15 @@ buildTarget('local').buildFlow(
                 }),
                 targetTask('packNodePackage', {
                     properties: {
-                        packageName: buildProject.getProperty("deploybugclient.packageJson.name"),
-                        packageVersion: buildProject.getProperty("deploybugclient.packageJson.version")
+                        packageName: buildProject.getProperty("deploybug.packageJson.name"),
+                        packageVersion: buildProject.getProperty("deploybug.packageJson.version")
                     }
                 }),
                 targetTask('startNodeModuleTests', {
                     init: function(task, buildProject, properties) {
                         var packedNodePackage = nodejs.findPackedNodePackage(
-                            buildProject.getProperty("deploybugclient.packageJson.name"),
-                            buildProject.getProperty("deploybugclient.packageJson.version")
+                            buildProject.getProperty("deploybug.packageJson.name"),
+                            buildProject.getProperty("deploybug.packageJson.version")
                         );
                         task.updateProperties({
                             modulePath: packedNodePackage.getFilePath()
@@ -175,8 +175,8 @@ buildTarget('local').buildFlow(
                 }),
                 targetTask("s3PutFile", {
                     init: function(task, buildProject, properties) {
-                        var packedNodePackage = nodejs.findPackedNodePackage(buildProject.getProperty("deploybugclient.packageJson.name"),
-                            buildProject.getProperty("deploybugclient.packageJson.version"));
+                        var packedNodePackage = nodejs.findPackedNodePackage(buildProject.getProperty("deploybug.packageJson.name"),
+                            buildProject.getProperty("deploybug.packageJson.version"));
                         task.updateProperties({
                             file: packedNodePackage.getFilePath(),
                             options: {
@@ -267,18 +267,18 @@ buildTarget('prod').buildFlow(
             series([
                 targetTask('createNodePackage', {
                     properties: {
-                        packageJson: buildProject.getProperty("deploybugclient.packageJson"),
-                        sourcePaths: buildProject.getProperty("deploybugclient.sourcePaths"),
-                        scriptPaths: buildProject.getProperty("deploybugclient.scriptPaths"),
-                        testPaths: buildProject.getProperty("deploybugclient.testPaths"),
-                        binPaths: buildProject.getProperty("deploybugclient.binPaths")
+                        packageJson: buildProject.getProperty("deploybug.packageJson"),
+                        sourcePaths: buildProject.getProperty("deploybug.sourcePaths"),
+                        scriptPaths: buildProject.getProperty("deploybug.scriptPaths"),
+                        testPaths: buildProject.getProperty("deploybug.testPaths"),
+                        binPaths: buildProject.getProperty("deploybug.binPaths")
                     }
                 }),
                 targetTask('generateBugPackRegistry', {
                     init: function(task, buildProject, properties) {
                         var nodePackage = nodejs.findNodePackage(
-                            buildProject.getProperty("deploybugclient.packageJson.name"),
-                            buildProject.getProperty("deploybugclient.packageJson.version")
+                            buildProject.getProperty("deploybug.packageJson.name"),
+                            buildProject.getProperty("deploybug.packageJson.version")
                         );
                         task.updateProperties({
                             sourceRoot: nodePackage.getBuildPath()
@@ -287,15 +287,15 @@ buildTarget('prod').buildFlow(
                 }),
                 targetTask('packNodePackage', {
                     properties: {
-                        packageName: buildProject.getProperty("deploybugclient.packageJson.name"),
-                        packageVersion: buildProject.getProperty("deploybugclient.packageJson.version")
+                        packageName: buildProject.getProperty("deploybug.packageJson.name"),
+                        packageVersion: buildProject.getProperty("deploybug.packageJson.version")
                     }
                 }),
                 targetTask('startNodeModuleTests', {
                     init: function(task, buildProject, properties) {
                         var packedNodePackage = nodejs.findPackedNodePackage(
-                            buildProject.getProperty("deploybugclient.packageJson.name"),
-                            buildProject.getProperty("deploybugclient.packageJson.version")
+                            buildProject.getProperty("deploybug.packageJson.name"),
+                            buildProject.getProperty("deploybug.packageJson.version")
                         );
                         task.updateProperties({
                             modulePath: packedNodePackage.getFilePath()
@@ -309,8 +309,8 @@ buildTarget('prod').buildFlow(
                 }),
                 targetTask("s3PutFile", {
                     init: function(task, buildProject, properties) {
-                        var packedNodePackage = nodejs.findPackedNodePackage(buildProject.getProperty("deploybugclient.packageJson.name"),
-                            buildProject.getProperty("deploybugclient.packageJson.version"));
+                        var packedNodePackage = nodejs.findPackedNodePackage(buildProject.getProperty("deploybug.packageJson.name"),
+                            buildProject.getProperty("deploybug.packageJson.version"));
                         task.updateProperties({
                             file: packedNodePackage.getFilePath(),
                             options: {
