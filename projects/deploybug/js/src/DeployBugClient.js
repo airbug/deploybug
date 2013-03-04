@@ -79,13 +79,13 @@ DeployBugClient.registerPackage = function(options, callback) {
 
     packagesSocket.on('registered-' + key, function(data){
         console.log(JSON.stringify(data));
-        callback(null); // should I check for the existence of a callback?
+        callback(null, data); // should I check for the existence of a callback?
     });
 
     packagesSocket.on('error-registering-' + key, function(data){
         var error = data.error;
         console.log(JSON.stringify(data));
-        callback(error);
+        callback(error, data);
     });
 };
 
