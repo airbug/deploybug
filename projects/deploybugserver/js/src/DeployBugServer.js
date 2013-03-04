@@ -16,10 +16,10 @@
 // Requires
 //-------------------------------------------------------------------------------
 
-var express = require("express");
+var express =   require("express");
 require('express-namespace');
-var http = require('http');
-var path = require('path');
+var http =      require('http');
+var path =      require('path');
 var bugpack =   require('bugpack').context(module);
 
 //-------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ DeployBugServer.configure = function(app, express, callback){
 
 DeployBugServer.enableRoutes = function(app, express, callback){
     app.get('/index', function(req, res){
-       res.send("hello this is the deploybugserver");
+       res.send("Hello, This is the DeployBugServer");
        res.end(); 
     });
 
@@ -102,7 +102,8 @@ DeployBugServer.enableRoutes = function(app, express, callback){
                      console.log('Package registration successful for package ' + descriptionJSON.key);
                      res.send('Package registration successful for package ' + descriptionJSON.key);
                  } else {
-                     res.send('Registration for package ' + descriptionJSON.key + ' failed. \n Error: ' + error.message + error.stack); //NOTE: REMOVE error.stack for production
+                     console.log('Registration failed for package' + descriptionJSON.key + '.\n Error: ' + error.message + error.stack);
+                     res.send('Registration failed for package ' + descriptionJSON.key + '. \n Error: ' + error.message);
                  }
                  res.end();
              });
@@ -117,7 +118,8 @@ DeployBugServer.enableRoutes = function(app, express, callback){
                      console.log('Package registration update successful for package ' + key);
                      res.send('Package registration update successful for package ' + key);
                  } else {
-                     res.send('Registration Failed: \n Error: ' + error.message + error.stack); //NOTE: REMOVE error.stack for production
+                     console.log('Registration update failed for package' + descriptionJSON.key + '.\n Error: ' + error.message + error.stack);
+                     res.send('Registration update failed for package ' + descriptionJSON.key + '. \n Error: ' + error.message);
                  }
                  res.end();
              });
@@ -172,7 +174,7 @@ DeployBugServer.enableRoutes = function(app, express, callback){
 
 DeployBugServer.start = function(){
     console.log("Starting DeployBugServer...");
-    var app = DeployBugServer.app();
+    var app = DeployBugServer.app(); //express
 
     //TODO: Allow this value to be configurable using a configuration json file.
     var port = DeployBugServer.port || 8000;
@@ -186,11 +188,159 @@ DeployBugServer.start = function(){
     });
 
     // Create Server
-    http.createServer(app).listen(port, function(){
+    var server = http.createServer(app);
+    
+    DeployBugServer.enableSockets(server, function(){
+        console.log("DeployBugServer sockets enabled");
+    });
+    
+    server.listen(port, function(){
         console.log("DeployBugServer successfully started");
         console.log("DeployBugServer listening on port " + port);
     });
+    
 };
+
+DeployBugServer.enableSockets = function(server, callback){    
+    var packages = require('socket.io').listen(server); //returns instance of socket io's Manager class whose prototype has an 'of' method defaults to .of('')
+    // Is there an error event for the socket connection
+    // packages.of('/deploybug/packages');
+    packages.sockets.on('connection', function (socket) {
+        console.log("Connection established")
+        // socket.emit('connect'); // This seems to be built in. Will find out when testing
+       
+        socket.on('register', function(data){
+            var descriptionJSON = data.descriptionJSON; //NOTE: registerPackage method now requires key as well as descriptionJSON
+            var key = data.key;
+            console.log("Registering package: ", key);
+            
+            DeployBug.registerPackage(key, descriptionJSON, function(error){
+                if(!error){
+                    console.log('Package registration successful for package ' + key);
+                    socket.emit('registered-' + key, {
+                        "key": key,
+                        "message": 'Package registration successful for package ' + key
+                    }) //complete or success or registered??
+                } else {
+                    console.log('Registration failed for package' + key + ': \n Error: ' + error.message + error.stack);
+                    socket.emit('error-registering-'+ key, {
+                        "key": key,
+                        "error": {"message": error.message}
+                    });
+                }
+            });
+        });
+       
+        socket.on('update', function(data){
+            var key = data.key;
+            var descriptionJSON = data.descriptionJSON;
+            console.log("Updating package: ", key);
+            
+            DeployBug.updatePackage(key, descriptionJSON, function(error){
+                if(!error){
+                    console.log('Package registration update successful for package ' + key);
+                    socket.emit('updated-' + key, {
+                        "key": key,
+                        "message": 'Package registration update successful for package ' + key
+                    })
+                } else {
+                    console.log('Registration update failed for package' + key + ': \n Error: ' + error.message + error.stack);
+                    socket.emit('error-updating-' + key, {
+                        "key": key,
+                        "error": {"message": error.message}
+                    });
+                }
+            });
+        });
+       
+        socket.on('deploy', function(data){
+            var key = data.key;
+            console.log("Deploying package: ", key);
+            
+            DeployBug.deployPackage(key, function(error, logs){
+                if(!error){
+                    console.log('Package ' + key + ' deployed successfully');
+                    socket.emit('deployed-' + key, {
+                        "key": key,
+                        "message": 'Package ' + key + ' deployed successfully'
+                    })
+                } else {
+                    console.log('Deployment failed for package' + key + ': \n Error: ' + error.message + error.stack);
+                    socket.emit('error-deploying-' + key, {
+                        "key": key,
+                        "error": {"message": error.message}
+                    });
+                }
+            });
+        });
+       
+        socket.on('start', function(data){
+            var key = data.key;
+            console.log("Starting package: ", key);
+            
+            DeployBug.startPackage(key, function(error, logs){
+                if(!error){
+                    console.log('Package ' + key + ' started successfully');
+                    socket.emit('started-' + key, {
+                        "key": key,
+                        "message": 'Package ' + key + ' started successfully'
+                    })
+                } else {
+                    console.log('Start failed for package' + key + ': \n Error: ' + error.message + error.stack);
+                    socket.emit('error-starting-' + key, {
+                        "key": key,
+                        "error": {"message": error.message}
+                    });
+                }
+            });
+        });
+       
+        socket.on('stop', function(data){
+            var key = data.key;
+            console.log("Stopping package: ", key);
+            
+            DeployBug.stopPackage(key, function(error, logs){
+                if(!error){
+                    console.log('Package ' + key + ' stopped successfully');
+                    socket.emit('stopped-' + key, {
+                        "key": key,
+                        "message": 'Package ' + key + ' stopped successfully'
+                    })
+                } else {
+                    console.log('Stop failed for package' + key + ': \n Error: ' + error.message + error.stack);
+                    socket.emit('error-stopping-' + key, {
+                        "key": key,
+                        "error": {"message": error.message}
+                    });
+                }
+            });
+        });
+        
+        socket.on('restart', function(data){
+            var key = data.key;
+            console.log("Restarting package: ", key);
+            
+            DeployBug.restartPackage(key, function(error, logs){
+                if(!error){
+                    console.log('Package ' + key + ' restarted successfully');
+                    socket.emit('restarted-' + key, {
+                        "key": key,
+                        "message": 'Package ' + key + ' restarted successfully'
+                    })
+                } else {
+                    console.log('Restart failed for package' + key + ': \n Error: ' + error.message + error.stack);
+                    socket.emit('error-restarting-' + key, {
+                        "key": key,
+                        "error": {"message": error.message}
+                    });
+                }
+            });
+        });
+    });
+    
+    callback();
+};
+
 
 //-------------------------------------------------------------------------------
 // Exports

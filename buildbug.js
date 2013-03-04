@@ -37,11 +37,12 @@ buildProperties({
     deploybug: {
         packageJson: {
             name: "deploybug",
-            version: "0.0.2",
+            version: "0.0.3",
             main: "./lib/DeployBugClient.js",
             bin: "bin/deploybug",
             dependencies: {
-                bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.3.tgz"
+                bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.3.tgz",
+                "socket.io-client": "0.9.x"
             },
             scripts: {
                 start: "node ./scripts/start.js" //??
@@ -70,10 +71,13 @@ buildProperties({
     deploybugserver: {
         packageJson: {
             name: "deploybugserver",
-            version: "0.0.2",
+            version: "0.0.3",
             main: "./lib/DeployBugServer.js",
             dependencies: {
-                bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.3.tgz"
+                bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.3.tgz",
+                "npm": "1.2.x",
+                "express": "3.1.x",
+                "socket.io": "0.9.x"
             },
             scripts: {
                 start: "node ./scripts/start.js"

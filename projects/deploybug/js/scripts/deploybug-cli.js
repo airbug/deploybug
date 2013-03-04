@@ -19,13 +19,15 @@ var http = require('http');
 //-------------------------------------------------------------------------------
 
 var BugFs =             bugpack.require('bugfs.BugFs');
+var BugFlow =           bugpack.require('bugflow.BugFlow');
 var DeployBugClient =   bugpack.require('deploybug.DeployBugClient');
 
+var $series =   BugFlow.$series;
+var $task =     BugFlow.$task;
 
 //-------------------------------------------------------------------------------
 // 
 //-------------------------------------------------------------------------------
-
 
 var toJSON = function toJSON(jsonString) {
     try {
@@ -37,53 +39,132 @@ var toJSON = function toJSON(jsonString) {
 };
 
 var argv = process.argv;
-var command = argv[2];
 var options = {};
+var actions = [];
 var configFilePath = path.resolve(__dirname, '../config/DeployBugClient.config.json');
 var environment = process.env.NODE_ENV || "development";
 
-// NOTE: Currently only server and port defaults are supported.
-// Supporting key and description defaults may cause more unintended consequences than benefits.
-var getDefaultOptions = (function(){
-    if(BugFs.existsSync(configFilePath)){
-        var configJSON = toJSON(BugFs.readFileSync(configFilePath, 'utf8'));
-    } else {
-        var configJSON = {
-            "development": {
-                "server": "localhost",
-                "port": 8000
-            }
-        };
-    }
-})();
+// check for arguments
+if (!argv[2]) {
+    throw new Error("Must specify an action such as start or stop");
+}
 
-var setOptions = (function(){
-    // find flag values
-    var flags = {
-        '-s': 'server',
-        '--server': 'server',
-        '-p': 'port',
-        '--port': 'port',
+var setOptionsAndActions = (function(){
+    // NOTE: Currently only server and port defaults are supported.
+    // Supporting key and description defaults may cause more unintended consequences than benefits.
+    var getAndSetDefaultOptions = (function(){
+        if(BugFs.existsSync(configFilePath)){
+            var configJSON = toJSON(BugFs.readFileSync(configFilePath, 'utf8'));
+        } else {
+            var configJSON = {
+                "development": {
+                    "server": "localhost",
+                    "port": 8000
+                }
+            };
+        }
+        
+        var optionsProperties = ["serverHostName", "serverPort"];
+        optionsProperties.forEach(function(property){
+             if (configJSON[environment][property]) {
+                    options[property] = configJSON[environment][property];
+                }
+        });
+    })();
+    
+    var optionFlags = {
+        '-s': 'serverHostName',
+        '--server': 'serverHostName',
+        '-p': 'serverPort',
+        '--port': 'serverPort',
         '-k': 'key',
         '--key': 'key',
-        '-d': 'description',
-        '--description': 'description'
+        '-d': 'descriptionPath',
+        '--description': 'descriptionPath'
     };
     
-    var flagRegExp = /^(-|--)/;
-    for (var i = 3; i < argv.length; i++ ) {
-        var flag = argv[i];
-        if (flagRegExp.test(flag)) {
-            options[flags[flag]] = argv[i + 1];
+    var actionFlags = {
+        'help': function(){
+            actions.push('help');
+        },
+        '-h': function(){
+            actions.push('help');
+        },
+        '--help': function(){
+            actions.push('help');
+        },
+        'configure': function(){
+            actions.push('configure');
+        },
+        'config': function(){
+            actions.push('configure');
+        },
+        'register': function(){
+            actions.push('registerPackage');
+        },
+        'update': function(){
+            actions.push('updatePackage');
+        },
+        'deploy': function(){
+            actions.push('deployPackage');
+        },
+        'start': function(){
+            actions.push('startPackage');
+        },
+        'stop': function(){ 
+            actions.push('deployPackage');
+        },
+        'restart': function(){
+            actions.push('restartPackage');
+        },
+        'rd': function(){
+            actions.push('registerPackage');
+            actions.push('deployPackage');
+        },
+        'rds': function(){
+            actions.push('registerPackage');
+            actions.push('deployPackage');
+            actions.push('startPackage');
+        },
+        'su': function(){
+            actions.push('stopPackage');
+            actions.push('updatePackage');
+        },
+        'sud': function(){
+            actions.push('stopPackage');
+            actions.push('updatePackage');
+            actions.push('deployPackage');
+        },
+        'suds': function(){
+            actions.push('stopPackage');
+            actions.push('updatePackage');
+            actions.push('deployPackage');
+            actions.push('startPackage');
         }
     }
 
-    // replace undefined values with defaults
-    var optionProperties = ["server", "port"];
-    for(var index in optionProperties){
-        var property = optionProperties[index];
-        if (options[property] == null) {
-            options[property] = configJSON[environment][property];
+    // parse arguments and set actions and options
+    // later options override earlier ones if duplicates are given
+    // currently ignores unknown actions
+    for (var i = 2; i < argv.length; i++ ) {
+        var flag = argv[i];
+        if(actionFlags[flag]){
+            actionFlags[flag]();
+        } else if (optionFlags[flag]) {
+            options[optionFlags[flag]] = argv[i + 1];
+        }
+    }
+
+    // convert descriptionPath to descriptionJSON
+    // cleans up options object
+    // validates JSON
+    if(options.descriptionPath) {
+        var descriptionPath = path.resolve(options.descriptionPath);
+        options.descriptionJSON = toJSON(BugFs.readFileSync(descriptionPath, 'utf8'));
+        delete(options.descriptionPath);
+
+        if(options.descriptionJSON === null){
+            throw new Error(descriptionPath + " is not valid JSON");
         }
     }
 })();
@@ -92,116 +173,58 @@ var setOptions = (function(){
 // 
 //-------------------------------------------------------------------------------
 
-if (!command) {
-    throw new Error("Must specify a command such as start or stop");
-}
+console.log('key: ' + options.key);
+console.log('server: ' + options.serverHostName);
+console.log('port: ' + options.serverPort);
 
-if (command === '-h' || command === '--help' || command === 'help') {
-    var helpText = BugFs.readFileSync(path.resolve('scripts/help.txt'), 'utf8');
-    console.log(helpText);
+DeployBugClient.initialize(options, function(){
+   console.log("DeployBugClient initialized");
+});
 
-} else if (command === 'config' || command === 'configure') {
-    // Note: Configuration options persist in the ../config/DeployBugClient.config.json file.
-    var server = options['server'];
-    var port = options['port'];
-    var key = options['key'];
-    var description = options['description'];
-    
-    if(server){
-        configJSON[environment]["server"] = server;
-        console.log("Server hostname for '" + environment + "' environment updated to " + server);
-    }
-    
-    if(port){
-        configJSON[environment]["port"] = parseInt(port, 10);
-        console.log("Server port for '" + environment + "' environment updated to " + port);
-    }
-    
-    if (!BugFs.existsSync(path.resolve(__dirname, '../config'))){
-        BugFs.createDirectorySync(path.resolve(__dirname, '../config'));
-    }
-    
-    BugFs.writeFileSync(configFilePath, JSON.stringify(configJSON), 'utf8');
-    console.log("Config file saved.");
+var flowArray = [];
+actions.forEach(function(action){
+    if(action === 'help'){
+        var helpText = BugFs.readFileSync(path.resolve('scripts/help.txt'), 'utf8');
+        console.log(helpText);
+    } else if(action === 'configure'){
+        // Note: Configuration options persist in the ../config/DeployBugClient.config.json file.
+        if(options.serverHostName){
+            configJSON[environment]["serverHostName"] = options.serverHostName;
+            console.log("Server hostname for '" + environment + "' environment updated to " + options.serverHostName);
+        }
 
+        if(options.serverPort){
+            configJSON[environment]["serverPort"] = parseInt(options.serverPort, 10);
+            console.log("Server port for '" + environment + "' environment updated to " + options.serverPort);
+        }
 
-} else if (command === 'register') {
-    var descriptionPath = path.resolve(options['description']);
-    var descriptionJSON = toJSON(BugFs.readFileSync(descriptionPath, 'utf8'));
-    var server = options['server'];
-    var port = options['port'];
-    console.log('description string: ' + JSON.stringify(descriptionJSON));
-    console.log('server: ' + server);
-    console.log('port: ' + port);
+        if (!BugFs.existsSync(path.resolve(__dirname, '../config'))){
+            BugFs.createDirectorySync(path.resolve(__dirname, '../config'));
+        }
 
-    if(descriptionJSON){
-        console.log('Waiting for response from DeployBugServer...');
-        DeployBugClient.registerPackage(descriptionJSON, server, port);
+        BugFs.writeFileSync(configFilePath, JSON.stringify(configJSON), 'utf8');
+        console.log("Config file saved.");
     } else {
-        console.log(descriptionPath + " is not valid JSON");
+        
+        flowArray.push($task(function(flow){ 
+            DeployBugClient[action](options, function(error, data){ 
+                if(!error){
+                    console.log(action + ' task completed \n', "Return Data: ", data);
+                } else {
+                    console.log(error, "\n", "Return Data: ",  data);
+                }
+                flow.complete(error);
+                
+            });
+        }));
     }
+});
 
-} else if (command === "update") {
-    var key = options['key'];
-    var descriptionPath = path.resolve(options['description']);
-    var descriptionJSON = toJSON(BugFs.readFileSync(descriptionPath, 'utf8'));
-    var server = options['server'];
-    var port = options['port'];
-    console.log('description string: ' + JSON.stringify(descriptionJSON));
-    console.log('server: ' + server);
-    console.log('port: ' + port);
-    
-    if(descriptionJSON){
-        console.log('Waiting for response from DeployBugServer...');
-        DeployBugClient.updatePackage(key, descriptionJSON, server, port);
+$series(flowArray).execute(function(error){
+    if(!error){
+        console.log("All tasks completed without error");
     } else {
-        console.log(descriptionPath + " is not valid JSON");
+        console.log(error);
     }
-
-} else if (command === "deploy") {
-    var key = options['key'];
-    var server = options['server'];
-    var port = options['port'];
-    console.log('key: ' + key);
-    console.log('server: ' + server);
-    console.log('port: ' + port);
-    console.log('Waiting for response from DeployBugServer...');
-
-    DeployBugClient.deployPackage(key, server, port);
-
-} else if (command === "start") {
-    var key = options['key'];
-    var server = options['server'];
-    var port = options['port'];
-    console.log('key: ' + key);
-    console.log('server: ' + server);
-    console.log('port: ' + port);
-    console.log('Waiting for response from DeployBugServer...');
-
-    DeployBugClient.startPackage(key, server, port);
-
-} else if (command === "stop") {
-    var key = options['key'];
-    var server = options['server'];
-    var port = options['port'];
-    console.log('key: ' + key);
-    console.log('server: ' + server);
-    console.log('port: ' + port);
-    console.log('Waiting for response from DeployBugServer...');
-
-    DeployBugClient.stopPackage(key, server, port);
-
-} else if (command === "restart") {
-    var key = options['key'];
-    var server = options['server'];
-    var port = options['port'];
-    console.log('key: ' + key);
-    console.log('server: ' + server);
-    console.log('port: ' + port);
-    console.log('Waiting for response from DeployBugServer...');
-
-    DeployBugClient.restartPackage(key, server, port);
-
-} else {
-    throw new Error("Unknown command '" + command + "'");
-}
+    process.exit(1);
+});

@@ -3,10 +3,10 @@ usage: deploybug [action] [options]
 actions:
     help        Prints Help file
     -h, --help  
-    
+
     register    Register a package description with the DeployBug server
-                    deploybug register --description [filepath] --server [server-address] --port [port-number]
-                    deploybug register -d [filepath] -s [server-address] -p [port-number]
+                    deploybug register --key [key] --description [filepath] --server [server-address] --port [port-number]
+                    deploybug register -k [key] -d [filepath] -s [server-address] -p [port-number]
                     
     update      Update a package description with the DeployBug server 
                 NOTE: Update will NOT register new descriptions
@@ -34,11 +34,20 @@ actions:
                     deploybug configure --server [server-address] --port [port]
                     deploybug configure -s [server-address] -p [port]
 
+    -rd         Register and deploy
+    -rds        Register, deploy and start
+    -su         Stop and update
+    -sud        Stop, update, and deploy
+    -suds       Stop, update, deploy, and start
+
 options:
     -s, --server        Hostname of the DeployBugServer
     -p, --port          Port number of the DeployBugServer
     -k, --key           Package Key
     -d, --description   Package description file path
     
+
+Multiple actions can be used at once
+                    deploybug register deploy start -k [key] -s [server-address] -p [port]
 
 //TODO: Add -v, --version
