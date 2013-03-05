@@ -58,6 +58,7 @@ var DeployBugClient = {
     */
     initialize: function(options, callback) {
         //TODO: Namespace the sockets
+        //TODO: Validate options. Find a way of handling/show error for inability to connect to server
         DeployBugClient.socket = io.connect(options.serverHostName + ':' + options.serverPort);
         DeployBugClient.socket.on('connecting', function(data){
             console.log('Connecting to DeployBugServer...');
@@ -81,14 +82,14 @@ var DeployBugClient = {
     },
 
     /**
-     * @param {
+     * @param {{
      *  key: string,
      *  descriptionJSON: {
      *  key: string,
      *  packageURL: string,
      *  packageType: string,
      *  startScript: (string | Path)
-     * }}
+     * }} options
      * @param {function(Error, {*})} callback
      */
     registerPackage: function(options, callback) {
