@@ -84,16 +84,6 @@ var DeployBugServer = {
              });
 
              app.post('/register', function(req, res) {
-                 // registration descriptions, currently stored in DeployBugServer.registry, will eventually be stored in a database ?
-                 //curl example: curl -v -H "Accept: application/json" -H "Content-type: application/json" -X POST -d '{"key":"XYZ"}'  http://localhost:8000/deploybug/packages/register
-                 /*
-                  * {
-                  *  key: string,
-                  *  packageURL: (string | Path),
-                  *  packageType: string,
-                  *  startScriptPath: (string | Path),
-                  * } description
-                  */
                  var descriptionJSON = req.body;
                  console.log('request body: ' + descriptionJSON);
                  DeployBug.registerPackage(descriptionJSON, function(error){
