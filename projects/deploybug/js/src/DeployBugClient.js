@@ -21,197 +21,252 @@ var io = require('socket.io-client');
 // Declare Class
 //-------------------------------------------------------------------------------
 
-var DeployBugClient = {};
-// var socket = require('socket.io-client')('http://localhost');
-// socket.on('connect', function(){
-//   socket.on('event', function(data){});
-//   socket.on('disconnect', fucntion(){});
-// });
+var DeployBugClient = {
 
-//-------------------------------------------------------------------------------
-// Public Methods
-//-------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------
+    // Variables
+    //-------------------------------------------------------------------------------
 
-DeployBugClient.socket = null;
+    /**
+     * @private
+     * @type{number}
+    */
+    count: 0,
 
-DeployBugClient.initialize = function(options, callback) {
-  DeployBugClient.socket = io.connect(options.serverHostName + ':' + options.serverPort);
-  DeployBugClient.socket.on('connecting', function(data){
-      console.log('Connecting to DeployBugServer...');
-      console.log(data); 
-  });
-  
-  DeployBugClient.socket.on('message', function(data){
-      console.log(data); 
-  });
-  
-  DeployBugClient.socket.on('connect', function(data){
-      console.log("Connected to DeployBugServer"); 
-  });
-  
-  DeployBugClient.socket.on('disconnect', function(data){ 
-      console.log('Disconnected from DeployBugServer');
-      process.exit(1);
-  });
-};
+    /**
+     * @type{{}}
+    */
+    socket: null,
 
-/**
- * @param {{
- *  packageURL: string,
- *  packageType: string,
- *  startScript: (string | Path),
- * }} descriptionJSON,
- * @param {string} serverHostname
- * @param {number} serverPort
- */
-DeployBugClient.registerPackage = function(options, callback) {
-    var packagesSocket = DeployBugClient.socket;
-    var key = options.key;
-    var clientData = {
-        key: key,
-        descriptionJSON: options.descriptionJSON
-    };
+    //-------------------------------------------------------------------------------
+    // Public Methods
+    //-------------------------------------------------------------------------------
 
-    //TODO: Validate key matches key inside descriptionJSON
+    /**
+     * @param {string} key
+    */
+    generateCallKey: function (key){
+        return key + (DeployBugClient.count ++);
+    },
 
-    packagesSocket.emit('register', clientData);
-    console.log('Waiting for response from DeployBugServer...');
+    /**
+     * @param {{
+     *  serverHostName: string,
+     *  serverPort: (string|number)
+     * }} options
+     * @param {function()} callback
+    */
+    initialize: function(options, callback) {
+        //TODO: Namespace the sockets
+        DeployBugClient.socket = io.connect(options.serverHostName + ':' + options.serverPort);
+        DeployBugClient.socket.on('connecting', function(data){
+            console.log('Connecting to DeployBugServer...');
+            console.log(data);
+        });
 
-    packagesSocket.on('registered-' + key, function(data){
-        console.log(JSON.stringify(data));
-        callback(null, data); // should I check for the existence of a callback?
-    });
+        DeployBugClient.socket.on('message', function(data){
+            console.log(data);
+        });
 
-    packagesSocket.on('error-registering-' + key, function(data){
-        var error = data.error;
-        console.log(JSON.stringify(data));
-        callback(error, data);
-    });
-};
+        DeployBugClient.socket.on('connect', function(data){
+            console.log("Connected to DeployBugServer");
+        });
 
-/**
- * @param {string} key
- * @param {{
- *  key: string,
- *  hostname: string,
- *  port: number,
- *  packageURL: string,
- *  packageType: string,
- *  startScript: (string | Path),
- * }} descriptionJSON
- * @param {string} serverHostname
- * @param {number} serverPort
- */
-DeployBugClient.updatePackage = function(options, callback){
-    var packagesSocket = DeployBugClient.socket;
-    var key = options.key;
-    var clientData = {
-        key: options.key,
-        descriptionJSON: options.descriptionJSON
-    };
-    //TODO: Validate key matches key inside descriptionJSON
+        DeployBugClient.socket.on('disconnect', function(data){
+            console.log('Disconnected from DeployBugServer');
+            process.exit(1);
+        });
 
-    packagesSocket.emit('update', clientData);
+        callback();
+    },
 
-    packagesSocket.on('updated-' + key, function(data) {
-        callback(null, data);
-    });
-    packagesSocket.on('error-updating-' + key, function(data) {
-        var error = data.error;
-        callback(error, data);
-    });
-};
+    /**
+     * @param {
+     *  key: string,
+     *  descriptionJSON: {
+     *  key: string,
+     *  packageURL: string,
+     *  packageType: string,
+     *  startScript: (string | Path)
+     * }}
+     * @param {function(Error, {*})} callback
+     */
+    registerPackage: function(options, callback) {
+        var packagesSocket = DeployBugClient.socket;
+        var key = options.key;
+        var callKey = DeployBugClient.generateCallKey(key);
+        var clientData = {
+            callKey: callKey,
+            key: key,
+            descriptionJSON: options.descriptionJSON
+        };
 
-/**
- * @param {string} key
- * @param {string} serverHostname
- * @param {number} serverPort
- */
-DeployBugClient.deployPackage = function(options, callback) {
-    var packagesSocket = DeployBugClient.socket;
-    var key = options.key;
-    var clientData = {
-        key: options.key,
-    };
+        //TODO: Validate key matches key inside descriptionJSON
 
-    packagesSocket.emit('deploy', clientData);
+        packagesSocket.emit('register', clientData);
+        console.log('Waiting for response from DeployBugServer...');
 
-    packagesSocket.on('deployed-' + key, function(data) {
-        callback(null, data);
-    });
-    packagesSocket.on('error-deploying-' + key, function(data) {
-        var error = data.error;
-        callback(error, data);
-    });
-};
+        packagesSocket.on('registered-' + callKey, function(data){
+            packagesSocket.removeAllListeners('registered-' + callKey, 'error-registered-' + callKey);
+            console.log(JSON.stringify(data));
+            callback(null, data); // should I check for the existence of a callback?
+        });
 
-/**
- * @param {string} key
- * @param {string} serverHostname
- * @param {number} serverPort
- */
-DeployBugClient.startPackage = function(key, serverHostname, serverPort, callback) {
-    var packagesSocket = DeployBugClient.socket;
-    var key = options.key;
-    var clientData = {
-        key: options.key,
-    };
+        packagesSocket.on('error-registering-' + callKey, function(data){
+            packagesSocket.removeAllListeners('registered-' + callKey, 'error-registered-' + callKey);
+            var error = data.error;
+            console.log(JSON.stringify(data));
+            callback(error, data);
+        });
+    },
 
-    packagesSocket.emit('start', clientData);
+    /**
+     * @param {{
+     *  key: string,
+     *  descriptionJSON: {
+     *  key: string,
+     *  packageURL: string,
+     *  packageType: string,
+     *  startScript: (string | Path)
+     * }
+     * }} options
+     * @param {function(Error, {*})} callback
+     */
+     updatePackage: function(options, callback){
+        var packagesSocket = DeployBugClient.socket;
+        var key = options.key;
+        var callKey = DeployBugClient.generateCallKey(key);
+        var clientData = {
+            callKey: callKey,
+            key: options.key,
+            descriptionJSON: options.descriptionJSON
+        };
+        //TODO: Validate key matches key inside descriptionJSON
 
-    packagesSocket.on('started-' + key, function(data) {
-        callback(null, data);
-    });
-    packagesSocket.on('error-starting-' + key, function(data) {
-        var error = data.error;
-        callback(error, data);
-    });
-};
+        packagesSocket.emit('update', clientData);
 
-/**
- * @param {string} key,
- * @param {string} serverHostname,
- * @param {number} serverPort
- */
-DeployBugClient.stopPackage = function(key, serverHostname, serverPort, callback) {
-    var packagesSocket = DeployBugClient.socket;
-    var key = options.key;
-    var clientData = {
-        key: options.key,
-    };
+        packagesSocket.on('updated-' + callKey, function(data) {
+            packagesSocket.removeAllListeners('updated-' + callKey, 'error-updating-' + callKey);
+            callback(null, data);
+        });
+        packagesSocket.on('error-updating-' + callKey, function(data) {
+            packagesSocket.removeAllListeners('updated-' + callKey, 'error-updating-' + callKey);
+            var error = data.error;
+            callback(error, data);
+        });
+    },
 
-    packagesSocket.emit('stop', clientData);
+    /**
+     * @param {{
+     *  key: string,
+     * }} options
+     * @param {function(Error, {*})} callback
+     */
+    deployPackage: function(options, callback) {
+        var packagesSocket = DeployBugClient.socket;
+        var key = options.key;
+        var callKey = DeployBugClient.generateCallKey(key);
+        var clientData = {
+            callKey: callKey,
+            key: options.key
+        };
 
-    packagesSocket.on('stopped-' + key, function(data) {
-        callback(null, data);
-    });
-    packagesSocket.on('error-stopping-' + key, function(data) {
-        var error = data.error;
-        callback(error, data);
-    });
-};
+        packagesSocket.emit('deploy', clientData);
 
-/**
- * @param {string} key,
- * @param {string} serverHostname,
- * @param {number} serverPort
- */
-DeployBugClient.restartPackage = function(options, callback) {
-    var packagesSocket = DeployBugClient.socket;
-    var key = options.key;
-    var clientData = {
-        key: options.key,
-    };
+        packagesSocket.on('deployed-' + callKey, function(data) {
+            packagesSocket.removeAllListeners('deployed-' + callKey, 'error-deploying-' + callKey);
+            callback(null, data);
+        });
+        packagesSocket.on('error-deploying-' + callKey, function(data) {
+            packagesSocket.removeAllListeners('deployed-' + callKey, 'error-deploying-' + callKey);
+            var error = data.error;
+            callback(error, data);
+        });
+    },
 
-    packagesSocket.emit('restart', clientData);
+    /**
+     * @param {{
+     *  key: string,
+     * }} options
+     * @param {function(Error, {*})} callback
+     */
+    startPackage: function(options, callback) {
+        var packagesSocket = DeployBugClient.socket;
+        var key = options.key;
+        var callKey = DeployBugClient.generateCallKey(key);
+        var clientData = {
+            callKey: callKey,
+            key: options.key
+        };
 
-    packagesSocket.on('restarted-' + key, function(data) {
-        callback(null, data);
-    });
-    packagesSocket.on('error-restarting-' + key, function(data) {
-        var error = data.error;
-        callback(error, data);
-    });
+        packagesSocket.emit('start', clientData);
+
+        packagesSocket.on('started-' + callKey, function(data) {
+            packagesSocket.removeAllListeners('started-' + callKey, 'error-starting-' + callKey);
+            callback(null, data);
+        });
+        packagesSocket.on('error-starting-' + callKey, function(data) {
+            packagesSocket.removeAllListeners('started-' + callKey, 'error-starting-' + callKey);
+            var error = data.error;
+            callback(error, data);
+        });
+    },
+
+    /**
+     * @param {{
+     *  key: string,
+     * }} options
+     * @param {function(Error, {*})} callback
+     */
+    stopPackage: function(options, callback) {
+        var packagesSocket = DeployBugClient.socket;
+        var key = options.key;
+        var callKey = DeployBugClient.generateCallKey(key);
+        var clientData = {
+            callKey: callKey,
+            key: options.key
+        };
+
+        packagesSocket.emit('stop', clientData);
+
+        packagesSocket.on('stopped-' + callKey, function(data) {
+            packagesSocket.removeAllListeners('stopped-' + callKey, 'error-stopping-' + callKey);
+            callback(null, data);
+        });
+        packagesSocket.on('error-stopping-' + callKey, function(data) {
+            packagesSocket.removeAllListeners('stopped-' + callKey, 'error-stopping-' + callKey);
+            var error = data.error;
+            callback(error, data);
+        });
+    },
+
+    /**
+     * @param {{
+     *  key: string,
+     * }} options
+     * @param {function(Error, {*})} callback
+     */
+     restartPackage: function(options, callback) {
+        var packagesSocket = DeployBugClient.socket;
+        var key = options.key;
+        var callKey = DeployBugClient.generateCallKey(key);
+        var clientData = {
+            callKey: callKey,
+            key: options.key
+        };
+
+        packagesSocket.emit('restart', clientData);
+
+        packagesSocket.on('restarted-' + callKey, function(data) {
+            packagesSocket.removeAllListeners('restarted-' + callKey, 'error-restarting-' + callKey);
+            callback(null, data);
+        });
+        packagesSocket.on('error-restarting-' + callKey, function(data) {
+            packagesSocket.removeAllListeners('restarted-' + callKey, 'error-restarting-' + callKey);
+            var error = data.error;
+            callback(error, data);
+        });
+    }
 };
 
 //-------------------------------------------------------------------------------

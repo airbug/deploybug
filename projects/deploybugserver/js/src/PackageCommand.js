@@ -1,4 +1,21 @@
+//-------------------------------------------------------------------------------
+// Requires
+//-------------------------------------------------------------------------------
+
+//@Package('deploybugserver')
+
+//@Export('PackageCommand')
+
+//-------------------------------------------------------------------------------
+// Common Modules
+//-------------------------------------------------------------------------------
+
+var bugpack         = require('bugpack').context(module);
 var child_process   = require('child_process');
+
+//-------------------------------------------------------------------------------
+// Declare Class
+//-------------------------------------------------------------------------------
 
 var PackageCommand = {
     execute: function(key, commandString, options, callback){
@@ -20,4 +37,9 @@ var PackageCommand = {
     }
 };
 
-module.exports.PackageCommand = PackageCommand;
+
+//-------------------------------------------------------------------------------
+// Exports
+//-------------------------------------------------------------------------------
+
+bugpack.export('deploybugserver.PackageCommand', PackageCommand);

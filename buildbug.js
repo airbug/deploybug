@@ -38,7 +38,7 @@ buildProperties({
         packageJson: {
             name: "deploybug",
             version: "0.0.3",
-            main: "./lib/DeployBugClient.js",
+            main: "./lib/deploybug-module.js",
             bin: "bin/deploybug",
             dependencies: {
                 bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.3.tgz",

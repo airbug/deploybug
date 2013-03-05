@@ -2,7 +2,7 @@
 // Requires
 //-------------------------------------------------------------------------------
 
-//@Package('deploybug')
+//@Package('deploybugserver')
 
 //@Export('DeployBug')
 
@@ -14,8 +14,6 @@
 
 var bugpack         = require('bugpack').context(module);
 var path            = require('path');
-var Validator       = require('./Validator.js').Validator;
-var PackageCommand  = require('./PackageCommand').PackageCommand;
 
 //Dependencies: npm, forever
 
@@ -23,8 +21,10 @@ var PackageCommand  = require('./PackageCommand').PackageCommand;
 // BugPack
 //-------------------------------------------------------------------------------
 
-var BugFs       = bugpack.require('bugfs.BugFs');
-var Map         = bugpack.require('Map');
+var BugFs           = bugpack.require('bugfs.BugFs');
+var Map             = bugpack.require('Map');
+var Validator       = bugpack.require('deploybugserver.Validator');
+var PackageCommand  = bugpack.require('deploybugserver.PackageCommand');
 
 //-------------------------------------------------------------------------------
 // 
@@ -50,8 +50,6 @@ DeployBug.packageRegistry = new Map();
 /**
  * @param {{
  *  key: string,
- *  hostname: string,
- *  port: number,
  *  packageURL: string,
  *  packageType: string,
  *  startScript: string
@@ -80,8 +78,6 @@ DeployBug.registerPackage = function(key, descriptionJSON, callback) {
  *  @param {string} key,
  *  @param {{
  *  key: string,
- *  hostname: string,
- *  port: number,
  *  packageURL: string,
  *  packageType: string,
  *  startScript: string
@@ -132,10 +128,10 @@ DeployBug.deployPackage = function(key, callback) {
         commandString += description.packageURL;
         PackageCommand.execute(key, commandString, options, function(error, logs){
             if(!error){
-                console.log("Package ", key, " deployed");
+                console.log("Package", key, "deployed");
                 callback(null, logs);
             } else {
-                console.log(error, " \n ", logs);
+                console.log(error, "\n", logs);
                 callback(error, logs);
             }
         });
@@ -164,10 +160,10 @@ DeployBug.startPackage = function(key, callback) {
     
     PackageCommand.execute(key, commandString, {}, function(error, logs){
         if(!error){
-            console.log("Package ", key, " deployed");
+            console.log("Package", key, "started");
             callback(null, logs);
         } else {
-            console.log(error, " \n ", logs);
+            console.log(error, "\n", logs);
             callback(error, logs);
         }
     });
@@ -185,10 +181,10 @@ DeployBug.stopPackage = function(key, callback) {
     
     PackageCommand.execute(key, commandString, {}, function(error, logs){
         if(!error){
-            console.log("Package ", key, " deployed");
+            console.log("Package", key, "stopped");
             callback(null, logs);
         } else {
-            console.log(error, " \n ", logs);
+            console.log(error, "\n", logs);
             callback(error, logs);
         }
     });
@@ -206,10 +202,10 @@ DeployBug.restartPackage = function(key, callback) {
     
     PackageCommand.execute(key, commandString, {}, function(error, logs){
         if(!error){
-            console.log("Package ", key, " deployed");
+            console.log("Package", key, "restarted");
             callback(null, logs);
         } else {
-            console.log(error, " \n ", logs);
+            console.log(error, "\n", logs);
             callback(error, logs);
         }
     });
@@ -219,8 +215,6 @@ DeployBug.restartPackage = function(key, callback) {
  *  @param {string} key
  *  @return {{
  *  key: string,
- *  hostname: string,
- *  port: number,
  *  packageURL: string,
  *  packageType: string,
  *  startScript: string
@@ -234,8 +228,6 @@ DeployBug.getPackageRegistryDescriptionByKey = function(key){
  *  @param {string} key
  *  @param {{
  *  key: string,
- *  hostname: string,
- *  port: integer,
  *  packageURL: string,
  *  packageType: string,
  *  startScript: string
@@ -262,4 +254,4 @@ DeployBug.getPackageRegistryKeys = function(){
 // Exports
 //-------------------------------------------------------------------------------
 
-bugpack.export('deploybug.DeployBug', DeployBug);
+bugpack.export('deploybugserver.DeployBug', DeployBug);
