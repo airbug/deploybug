@@ -7,6 +7,9 @@
 //@Export('DeployBug')
 
 //@Require('bugfs.BugFs')
+//@Require('Map')
+//@Require('deploybugserver.Validator')
+//@Require('deploybugserver.PackageCommand')
 
 //-------------------------------------------------------------------------------
 // Common Modules
@@ -15,20 +18,14 @@
 var bugpack         = require('bugpack').context(module);
 var path            = require('path');
 
-//Dependencies: npm, forever
-
 //-------------------------------------------------------------------------------
 // BugPack
 //-------------------------------------------------------------------------------
 
 var BugFs           = bugpack.require('bugfs.BugFs');
 var Map             = bugpack.require('Map');
-var Validator       = bugpack.require('deploybugserver.Validator');
 var PackageCommand  = bugpack.require('deploybugserver.PackageCommand');
-
-//-------------------------------------------------------------------------------
-// 
-//-------------------------------------------------------------------------------
+var Validator       = bugpack.require('deploybugserver.Validator');
 
 //-------------------------------------------------------------------------------
 // Declare Class
@@ -42,13 +39,37 @@ var DeployBug = {
 
     /**
      * @private
+     * @type {boolean}
+     */
+    initialized: false,
+
+    /**
+     * @private
      * @type {Map}
      */
-    packageRegistry: new Map(), //TODO: Make this persist in a database. sqlite? mongodb?
+    packageRegistry: new Map(), //TODO: Make this persist in a database. postgresql? sqlite? mongodb?
 
     //-------------------------------------------------------------------------------
     // Public Static Methods
     //-------------------------------------------------------------------------------
+
+    /**
+     * @param {function(error)} callback
+     */
+    initialize: function(callback){
+        if(!DeployBug.initialized) {
+            try {
+                var installationDirectory = path.resolve(__dirname + '/../.deploybug/node_modules/');
+                if(!BugFs.existsSync(installationDirectory)){
+                    BugFs.createDirectorySync(installationDirectory, true);
+                }
+                DeployBug.initialized = true;
+                callback();
+            } catch(error){
+                callback(error);
+            }
+        }
+    },
 
     /**
      * @param {{
@@ -94,7 +115,7 @@ var DeployBug = {
             }
 
             if(!DeployBug.getPackageRegistryDescriptionByKey(key)){
-                throw new Error("Package key does not exist in the registry.");
+                throw new Error("Package key does not exist in the registry. Please use 'register' to register your package.");
             } else {
                 Validator.validatePackageDescription(descriptionJSON);
                 DeployBug.setPackageRegistryDescription(descriptionJSON.key, descriptionJSON);
@@ -114,9 +135,6 @@ var DeployBug = {
     deployPackage: function(key, callback) {
         var commandString;
         var options = {};
-
-        //TODO: perhaps all deployed packages should be contained within a .deploybug folder that should exist at the root of the deploybug package.
-        var rootpath = __dirname + "/../../../..";
         var description = DeployBug.getPackageRegistryDescriptionByKey(key);
 
         //TODO: Could probably move this to validation during registration
@@ -124,7 +142,9 @@ var DeployBug = {
 
             //TODO: From a security perspective. We will want to install the packages using a specific unix user id. OR after the package is installed, we will want to change the owner of the package.
             commandString = 'npm install '
-            options.cwd = path.resolve(rootpath + '/deploybug/');
+            //NOTE: Change of directory location to root of the deploybug package
+            options.cwd = path.resolve(__dirname + '/../.deploybug/');
+
             if (!BugFs.existsSync(options.cwd)){
                 BugFs.createDirectorySync(options.cwd);
             }
@@ -156,11 +176,10 @@ var DeployBug = {
     startPackage: function(key, callback) {
         var description = DeployBug.getPackageRegistryDescriptionByKey(key);
         var startScript = description.startScript;
-
-        //TODO: Place the rootpath in a common location where it can be accessed by all functions.
-        var rootpath = __dirname + "/../../../..";
-        var commandString = 'forever start ' + path.resolve(path.join(rootpath + '/deploybug/node_modules/', description.key, startScript));
-
+        //NOTE: Change of directory location to the root of the deploybug package
+        //TODO: Is the description key the same as the name of the module? Should it be? TODO: Separate key from module name
+        //TODO: DRY up __dirname + '/../.deploybug/node_modules/
+        var commandString = 'forever start ' + path.resolve(path.join(__dirname + '/../.deploybug/node_modules/', description.key, startScript));
         PackageCommand.execute(key, commandString, {}, function(error, logs){
             if(!error){
                 console.log("Package", key, "started");
@@ -179,8 +198,7 @@ var DeployBug = {
     stopPackage: function(key, callback) {
         var description = DeployBug.getPackageRegistryDescriptionByKey(key);
         var startScript = description.startScript;
-        var rootpath = __dirname + "/../../../..";
-        var commandString = 'forever stop ' + path.resolve(path.join(rootpath + '/deploybug/node_modules/', description.key, startScript));
+        var commandString = 'forever stop ' + path.resolve(path.join(__dirname + '/../.deploybug/node_modules/', description.key, startScript));
 
         PackageCommand.execute(key, commandString, {}, function(error, logs){
             if(!error){
@@ -200,8 +218,7 @@ var DeployBug = {
     restartPackage: function(key, callback) {
         var description = DeployBug.getPackageRegistryDescriptionByKey(key);
         var startScript = description.startScript;
-        var rootpath = __dirname + "/../../../..";
-        var commandString = 'forever restart ' + path.resolve(path.join(rootpath + '/deploybug/node_modules/', description.key, startScript));
+        var commandString = 'forever restart ' + path.resolve(path.join(__dirname + '/../.deploybug/node_modules/', description.key, startScript));
 
         PackageCommand.execute(key, commandString, {}, function(error, logs){
             if(!error){
@@ -212,6 +229,10 @@ var DeployBug = {
                 callback(error, logs);
             }
         });
+        // NOTE: Possible refactor:
+        // Deploybug.stopPackage(key, function(){
+        //     Deploybug.startPackage(key, callback);
+        // });
     },
 
     //-------------------------------------------------------------------------------
