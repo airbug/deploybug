@@ -5,7 +5,6 @@
 //@Require('deploybug.DeployBugClient')
 //@Require('bugfs.BugFs')
 
-
 //-------------------------------------------------------------------------------
 // Common Modules
 //-------------------------------------------------------------------------------
@@ -63,7 +62,7 @@ var setOptionsAndActions = (function(){
                 }
             };
         }
-        
+
         var optionsProperties = ["serverHostName", "serverPort"];
         optionsProperties.forEach(function(property){
              if (configJSON[environment][property]) {
@@ -71,7 +70,7 @@ var setOptionsAndActions = (function(){
                 }
         });
     })();
-    
+
     var optionFlags = {
         '-s': 'serverHostName',
         '--server': 'serverHostName',
@@ -82,7 +81,7 @@ var setOptionsAndActions = (function(){
         '-d': 'descriptionPath',
         '--description': 'descriptionPath'
     };
-    
+
     var actionFlags = {
         'help': function(){
             actions.push('help');
@@ -161,7 +160,7 @@ var setOptionsAndActions = (function(){
     if(options.descriptionPath) {
         var descriptionPath = path.resolve(options.descriptionPath);
         options.descriptionJSON = toJSON(BugFs.readFileSync(descriptionPath, 'utf8'));
-        delete(options.descriptionPath);
+        delete options.descriptionPath;
 
         if(options.descriptionJSON === null){
             throw new Error(descriptionPath + " is not valid JSON");
