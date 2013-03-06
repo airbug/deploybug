@@ -36,18 +36,16 @@ var DeployBugClient = {
     /**
      * @type{{}}
     */
-    socket: null,
+    packagesSocket: null,
+
+    /**
+     * @type{{}}
+    */
+    nodesSocket: null,
 
     //-------------------------------------------------------------------------------
     // Public Methods
     //-------------------------------------------------------------------------------
-
-    /**
-     * @param {string} key
-    */
-    generateCallKey: function (key){
-        return key + (DeployBugClient.count ++);
-    },
 
     /**
      * @param {{
@@ -57,23 +55,24 @@ var DeployBugClient = {
      * @param {function()} callback
     */
     initialize: function(options, callback) {
-        //TODO: Namespace the sockets
         //TODO: Validate options. Find a way of handling/show error for inability to connect to server
-        DeployBugClient.socket = io.connect(options.serverHostName + ':' + options.serverPort);
-        DeployBugClient.socket.on('connecting', function(data){
+        // initializes packages socket namespaced to hostname/deploybug/packages endpoint. separate socket needed for nodes
+        var packagesSocket = DeployBugClient.packagesSocket = io.connect(options.serverHostName + ':' + options.serverPort);
+        packagesSocket.of('/deploybug/packages');
+        packagesSocket.on('connecting', function(data){
             console.log('Connecting to DeployBugServer...');
             console.log(data);
         });
 
-        DeployBugClient.socket.on('message', function(data){
+        packagesSocket.on('message', function(data){
             console.log(data);
         });
 
-        DeployBugClient.socket.on('connect', function(data){
+        packagesSocket.on('connect', function(data){
             console.log("Connected to DeployBugServer");
         });
 
-        DeployBugClient.socket.on('disconnect', function(data){
+        packagesSocket.on('disconnect', function(data){
             console.log('Disconnected from DeployBugServer');
             process.exit(1);
         });
@@ -93,7 +92,7 @@ var DeployBugClient = {
      * @param {function(Error, {*})} callback
      */
     registerPackage: function(options, callback) {
-        var packagesSocket = DeployBugClient.socket;
+        var packagesSocket = DeployBugClient.packagesSocket;
         var key = options.key;
         var callKey = DeployBugClient.generateCallKey(key);
         var clientData = {
@@ -134,7 +133,7 @@ var DeployBugClient = {
      * @param {function(Error, {*})} callback
      */
      updatePackage: function(options, callback){
-        var packagesSocket = DeployBugClient.socket;
+        var packagesSocket = DeployBugClient.packagesSocket;
         var key = options.key;
         var callKey = DeployBugClient.generateCallKey(key);
         var clientData = {
@@ -164,7 +163,7 @@ var DeployBugClient = {
      * @param {function(Error, {*})} callback
      */
     deployPackage: function(options, callback) {
-        var packagesSocket = DeployBugClient.socket;
+        var packagesSocket = DeployBugClient.packagesSocket;
         var key = options.key;
         var callKey = DeployBugClient.generateCallKey(key);
         var clientData = {
@@ -192,7 +191,7 @@ var DeployBugClient = {
      * @param {function(Error, {*})} callback
      */
     startPackage: function(options, callback) {
-        var packagesSocket = DeployBugClient.socket;
+        var packagesSocket = DeployBugClient.packagesSocket;
         var key = options.key;
         var callKey = DeployBugClient.generateCallKey(key);
         var clientData = {
@@ -220,7 +219,7 @@ var DeployBugClient = {
      * @param {function(Error, {*})} callback
      */
     stopPackage: function(options, callback) {
-        var packagesSocket = DeployBugClient.socket;
+        var packagesSocket = DeployBugClient.packagesSocket;
         var key = options.key;
         var callKey = DeployBugClient.generateCallKey(key);
         var clientData = {
@@ -248,7 +247,7 @@ var DeployBugClient = {
      * @param {function(Error, {*})} callback
      */
      restartPackage: function(options, callback) {
-        var packagesSocket = DeployBugClient.socket;
+        var packagesSocket = DeployBugClient.packagesSocket;
         var key = options.key;
         var callKey = DeployBugClient.generateCallKey(key);
         var clientData = {
@@ -267,6 +266,18 @@ var DeployBugClient = {
             var error = data.error;
             callback(error, data);
         });
+    },
+
+    //-------------------------------------------------------------------------------
+    // Private Methods
+    //-------------------------------------------------------------------------------
+
+    /**
+     * @private
+     * @param {string} key
+    */
+    generateCallKey: function (key){
+        return key + (DeployBugClient.count ++);
     }
 };
 

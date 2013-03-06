@@ -164,7 +164,7 @@ var DeployBugServer = {
     enableSockets: function(server, callback){    
         var packages = require('socket.io').listen(server); //returns instance of socket io's Manager class whose prototype has an 'of' method defaults to .of('')
         // Is there an error event for the socket connection
-        // packages.of('/deploybug/packages');
+        packages.of('/deploybug/packages');
         packages.sockets.on('connection', function (socket) {
             console.log("Connection established")
             // socket.emit('connect'); // connect and connecting events are built in. connect is emitted upon connection establishment
