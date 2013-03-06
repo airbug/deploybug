@@ -44,9 +44,7 @@ buildProperties({
                 bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.3.tgz",
                 "socket.io-client": "0.9.x"
             },
-            scripts: {
-                start: "node ./scripts/start.js" //??
-            }
+            scripts: {}
         },
         sourcePaths: [
             "./projects/deploybug/js/src",
@@ -78,11 +76,10 @@ buildProperties({
                 bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.3.tgz",
                 "npm": "1.2.x",
                 "express": "3.1.x",
-                "socket.io": "0.9.x"
+                "socket.io": "0.9.x",
+                "forever": "0.10.x"
             },
-            scripts: {
-                start: "node ./scripts/start.js"
-            }
+            scripts: {}
         },
         sourcePaths: [
             "./projects/deploybugserver/js/src",
@@ -124,9 +121,6 @@ buildTarget('clean').buildFlow(
 
 // Local Flow
 //-------------------------------------------------------------------------------
-
-//TODO BRN: Local development of node js and client side projects should "create" the packages and package them up but
-// the sources should be symlinked to instead
 
 buildTarget('local').buildFlow(
     series([
