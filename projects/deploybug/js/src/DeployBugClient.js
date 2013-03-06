@@ -29,17 +29,25 @@ var DeployBugClient = {
 
     /**
      * @private
-     * @type{number}
+     * @type {number}
     */
     count: 0,
 
     /**
-     * @type{{}}
+     * @private
+     * @type {boolean}
+    */
+    initialized: false,
+
+    /**
+     * @private
+     * @type {Manager}
     */
     packagesSocket: null,
 
     /**
-     * @type{{}}
+     * @private
+     * @type {Manager}
     */
     nodesSocket: null,
 
@@ -55,33 +63,37 @@ var DeployBugClient = {
      * @param {function()} callback
     */
     initialize: function(options, callback) {
-        //TODO: Validate options. Find a way of handling/show error for inability to connect to server
+        //TODO: Validate options.
         // initializes packages socket namespaced to hostname/deploybug/packages endpoint. separate socket needed for nodes
-        var packagesSocket = DeployBugClient.packagesSocket = io.connect(options.serverHostName + ':' + options.serverPort);
-        packagesSocket.of('/deploybug/packages');
-        packagesSocket.on('connecting', function(data){
-            console.log('Connecting to DeployBugServer...');
-            console.log(data);
-        });
+        if (!DeployBugClient.initialized) {
+            DeployBugClient.initialized = true;
+            var packagesSocket = DeployBugClient.packagesSocket = io.connect(options.serverHostName + ':' + options.serverPort);
+            packagesSocket.of('/deploybug/packages');
+            packagesSocket.on('connecting', function(data){
+                console.log('Connecting to DeployBugServer...');
+                console.log(data);
+            });
 
-        packagesSocket.on('connect', function(data){
-            console.log("Connected to DeployBugServer");
-        });
+            packagesSocket.on('connect', function(data){
+                console.log("Connected to DeployBugServer");
+            });
 
-        packagesSocket.on('error', function(reason){
-            console.log("Unable to connect to DeployBugServer via socket", reason);
-        });
+            packagesSocket.on('error', function(reason){
+                console.log("Unable to connect to DeployBugServer via socket", reason);
+                process.exit(1);
+            });
 
-        packagesSocket.on('message', function(data){
-            console.log(data);
-        });
+            packagesSocket.on('message', function(data){
+                console.log(data);
+            });
 
-        packagesSocket.on('disconnect', function(data){
-            console.log('Disconnected from DeployBugServer');
-            process.exit(1);
-        });
+            packagesSocket.on('disconnect', function(data){
+                console.log('Disconnected from DeployBugServer');
+                process.exit(1);
+            });
 
-        callback();
+            callback();
+        }
     },
 
     /**
