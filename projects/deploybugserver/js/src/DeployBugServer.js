@@ -1,6 +1,3 @@
-//TODO LIST
-// 1) Security. How do we protect these api endpoints?
-
 //-------------------------------------------------------------------------------
 // Annotations
 //-------------------------------------------------------------------------------
@@ -11,16 +8,16 @@
 
 //@Require('deploybugserver.DeployBug')
 
-
 //-------------------------------------------------------------------------------
 // Requires
 //-------------------------------------------------------------------------------
 
-var express =   require("express");
+var express     = require('express');
+var http        = require('http');
+var path        = require('path');
+var bugpack     = require('bugpack').context(module);
+
 require('express-namespace');
-var http =      require('http');
-var path =      require('path');
-var bugpack =   require('bugpack').context(module);
 
 //-------------------------------------------------------------------------------
 // BugPack
@@ -34,15 +31,27 @@ var DeployBug = bugpack.require('deploybugserver.DeployBug');
 //-------------------------------------------------------------------------------
 
 var DeployBugServer = {
+
+    /**
+     * @type {number}
+     */
     port: null,
 
+    /**
+     * @return {Function}
+     */
     app: function(){
         return express();
     },
 
+    /**
+     * @param {Function} app
+     * @param {Function} express
+     * @param {Function} callback
+     */
     configure: function(app, express, callback){
         app.configure(function() {
-            //TODO: Add authentication
+            //TODO: Add authentication //TODO LIST // 1) Security. How do we protect these api endpoints?
             app.use(express.errorHandler({dumpExceptions:true,showStack:true}));
             app.use(express.logger('dev'));
             app.use(express.bodyParser());
@@ -62,6 +71,11 @@ var DeployBugServer = {
         callback();
     },
 
+    /**
+     * @param {Function} app
+     * @param {Function} express
+     * @param {Function} callback
+     */
     enableRoutes: function(app, express, callback){
         app.get('/index', function(req, res){
            res.send("Hello, This is the DeployBugServer");
@@ -161,6 +175,10 @@ var DeployBugServer = {
         callback();
     },
 
+    /**
+     * @param {Server} server
+     * @param {Function} callback
+     */
     enableSockets: function(server, callback){    
         var packages = require('socket.io').listen(server); //returns instance of socket io's Manager class whose prototype has an 'of' method defaults to .of('')
         // Is there an error event for the socket connection
@@ -317,6 +335,14 @@ var DeployBugServer = {
         console.log("Starting DeployBugServer...");
         var app = DeployBugServer.app(); //express
 
+        DeployBug.initialize(function(error){
+            if(!error) {
+                console.log("DeployBug initialized");
+            } else {
+                console.log(error);
+            }
+        });
+
         //TODO: Allow this value to be configurable using a configuration json file.
         var port = DeployBugServer.port || 8000;
 
@@ -331,7 +357,6 @@ var DeployBugServer = {
         // Create Server
         var server = http.createServer(app);
 
-        //TODO: Namespace the sockets
         DeployBugServer.enableSockets(server, function(){
             console.log("DeployBugServer sockets enabled");
         });
