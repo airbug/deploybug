@@ -64,12 +64,16 @@ var DeployBugClient = {
             console.log(data);
         });
 
-        packagesSocket.on('message', function(data){
-            console.log(data);
-        });
-
         packagesSocket.on('connect', function(data){
             console.log("Connected to DeployBugServer");
+        });
+
+        packagesSocket.on('error', function(reason){
+            console.log("Unable to connect to DeployBugServer via socket", reason);
+        });
+
+        packagesSocket.on('message', function(data){
+            console.log(data);
         });
 
         packagesSocket.on('disconnect', function(data){
