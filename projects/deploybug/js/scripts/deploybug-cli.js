@@ -2,30 +2,35 @@
 // Requires
 //-------------------------------------------------------------------------------
 
-//@Require('deploybug.DeployBugClient')
+//@Require('bugflow.BugFlow')
 //@Require('bugfs.BugFs')
+//@Require('deploybug.DeployBugClient')
 
 //-------------------------------------------------------------------------------
 // Common Modules
 //-------------------------------------------------------------------------------
 
 var bugpack = require('bugpack').context(module);
-var path = require('path');
 var http = require('http');
+var path = require('path');
 
 //-------------------------------------------------------------------------------
 // BugPack
 //-------------------------------------------------------------------------------
 
-var BugFs =             bugpack.require('bugfs.BugFs');
 var BugFlow =           bugpack.require('bugflow.BugFlow');
+var BugFs =             bugpack.require('bugfs.BugFs');
 var DeployBugClient =   bugpack.require('deploybug.DeployBugClient');
+
+//-------------------------------------------------------------------------------
+// Simplify References
+//-------------------------------------------------------------------------------
 
 var $series =   BugFlow.$series;
 var $task =     BugFlow.$task;
 
 //-------------------------------------------------------------------------------
-// 
+// Variables
 //-------------------------------------------------------------------------------
 
 var toJSON = function toJSON(jsonString) {
@@ -43,10 +48,17 @@ var actions = [];
 var configFilePath = path.resolve(__dirname, '../config/DeployBugClient.config.json');
 var environment = process.env.NODE_ENV || "development";
 
-// check for arguments
+//-------------------------------------------------------------------------------
+// Validations
+//-------------------------------------------------------------------------------
+
 if (!argv[2]) {
     throw new Error("Must specify an action such as start or stop");
 }
+
+//-------------------------------------------------------------------------------
+// Parse Arguments
+//-------------------------------------------------------------------------------
 
 var setOptionsAndActions = (function(){
     // NOTE: Currently only server and port defaults are supported.
@@ -57,7 +69,7 @@ var setOptionsAndActions = (function(){
         } else {
             var configJSON = {
                 "development": {
-                    "server": "localhost",
+                    "server": "http://localhost",
                     "port": 8000
                 }
             };
@@ -169,7 +181,7 @@ var setOptionsAndActions = (function(){
 })();
 
 //-------------------------------------------------------------------------------
-// 
+// Execute Actions
 //-------------------------------------------------------------------------------
 
 console.log('key: ' + options.key);
