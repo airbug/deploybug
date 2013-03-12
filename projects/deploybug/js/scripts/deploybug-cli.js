@@ -6,6 +6,7 @@
 //@Require('bugfs.BugFs')
 //@Require('deploybug.DeployBugClient')
 
+
 //-------------------------------------------------------------------------------
 // Common Modules
 //-------------------------------------------------------------------------------
@@ -13,6 +14,7 @@
 var bugpack = require('bugpack').context(module);
 var http = require('http');
 var path = require('path');
+
 
 //-------------------------------------------------------------------------------
 // BugPack
@@ -22,12 +24,14 @@ var BugFlow =           bugpack.require('bugflow.BugFlow');
 var BugFs =             bugpack.require('bugfs.BugFs');
 var DeployBugClient =   bugpack.require('deploybug.DeployBugClient');
 
+
 //-------------------------------------------------------------------------------
 // Simplify References
 //-------------------------------------------------------------------------------
 
 var $series =   BugFlow.$series;
 var $task =     BugFlow.$task;
+
 
 //-------------------------------------------------------------------------------
 // Variables
@@ -48,6 +52,7 @@ var actions = [];
 var configFilePath = path.resolve(__dirname, '../config/DeployBugClient.config.json');
 var environment = process.env.NODE_ENV || "development";
 
+
 //-------------------------------------------------------------------------------
 // Validations
 //-------------------------------------------------------------------------------
@@ -55,6 +60,7 @@ var environment = process.env.NODE_ENV || "development";
 if (!argv[2]) {
     throw new Error("Must specify an action such as start or stop");
 }
+
 
 //-------------------------------------------------------------------------------
 // Parse Arguments
@@ -179,6 +185,7 @@ var setOptionsAndActions = (function(){
         }
     }
 })();
+
 
 //-------------------------------------------------------------------------------
 // Execute Actions

@@ -37,11 +37,11 @@ buildProperties({
     deploybug: {
         packageJson: {
             name: "deploybug",
-            version: "0.0.3",
+            version: "0.0.4",
             main: "./lib/deploybug-module.js",
             bin: "bin/deploybug",
             dependencies: {
-                bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.3.tgz",
+                bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.4.tgz",
                 "socket.io-client": "0.9.x"
             },
             scripts: {}
@@ -70,10 +70,10 @@ buildProperties({
     deploybugserver: {
         packageJson: {
             name: "deploybugserver",
-            version: "0.0.3",
+            version: "0.0.4",
             main: "./lib/DeployBugServer.js",
             dependencies: {
-                bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.3.tgz",
+                bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.4.tgz",
                 "npm": "1.2.x",
                 "express": "3.1.x",
                 "socket.io": "0.9.x",
@@ -180,7 +180,7 @@ buildTarget('local').buildFlow(
                         task.updateProperties({
                             file: packedNodePackage.getFilePath(),
                             options: {
-                                ACL: 'public-read'
+                                acl: 'public-read'
                             }
                         });
                     },
@@ -239,7 +239,7 @@ buildTarget('local').buildFlow(
                         task.updateProperties({
                             file: packedNodePackage.getFilePath(),
                             options: {
-                                ACL: 'public-read'
+                                acl: 'public-read'
                             }
                         });
                     },
@@ -314,7 +314,7 @@ buildTarget('prod').buildFlow(
                         task.updateProperties({
                             file: packedNodePackage.getFilePath(),
                             options: {
-                                ACL: 'public-read'
+                                acl: 'public-read'
                             }
                         });
                     },
@@ -373,7 +373,7 @@ buildTarget('prod').buildFlow(
                         task.updateProperties({
                             file: packedNodePackage.getFilePath(),
                             options: {
-                                ACL: 'public-read'
+                                acl: 'public-read'
                             }
                         });
                     },
