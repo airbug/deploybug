@@ -2,7 +2,7 @@
 // Requires
 //-------------------------------------------------------------------------------
 
-//@Package('deploybugserver')
+//@Package('deploybugnode')
 
 //@Export('PackageCommand')
 
@@ -42,4 +42,4 @@ var PackageCommand = {
 // Exports
 //-------------------------------------------------------------------------------
 
-bugpack.export('deploybugserver.PackageCommand', PackageCommand);
+bugpack.export('deploybugnode.PackageCommand', PackageCommand);

@@ -12,6 +12,8 @@
 
 var bugpack = require('bugpack').context(module);
 var io = require('socket.io-client');
+var Class =         bugpack.require('Class');
+var Obj =           bugpack.require('Obj');
 
 //-------------------------------------------------------------------------------
 // BugPack
@@ -21,35 +23,36 @@ var io = require('socket.io-client');
 // Declare Class
 //-------------------------------------------------------------------------------
 
-var DeployBugClient = {
+var DeployBugClient = Class.extend(Obj, {
+    
+    _constructor: function(options, callback){
 
-    //-------------------------------------------------------------------------------
-    // Variables
-    //-------------------------------------------------------------------------------
+        this._super();
+        
+        //-------------------------------------------------------------------------------
+        // Variables
+        //-------------------------------------------------------------------------------
 
-    /**
-     * @private
-     * @type {number}
-    */
-    count: 0,
+        /**
+         * @private
+         * @type {number}
+        */
+        this.count = 0;
 
-    /**
-     * @private
-     * @type {boolean}
-    */
-    initialized: false,
+        /**
+         * @private
+         * @type {boolean}
+        */
+        this.initialized = false;
 
-    /**
-     * @private
-     * @type {Manager}
-    */
-    packagesSocket: null,
+        /**
+         * @private
+         * @type {Manager}
+        */
+        this.deploybugSocket = null;
 
-    /**
-     * @private
-     * @type {Manager}
-    */
-    nodesSocket: null,
+        this.initialize(options, callback);
+    },
 
     //-------------------------------------------------------------------------------
     // Public Methods
@@ -65,74 +68,94 @@ var DeployBugClient = {
     initialize: function(options, callback) {
         //TODO: Validate options.
         // initializes packages socket namespaced to hostname/deploybug/packages endpoint. separate socket needed for nodes
-        if (!DeployBugClient.initialized) {
-            DeployBugClient.initialized = true;
-            var packagesSocket = DeployBugClient.packagesSocket = io.connect(options.serverHostName + ':' + options.serverPort);
-            packagesSocket.of('/deploybug/packages');
-            packagesSocket.on('connecting', function(data){
+        if (!this.initialized) {
+            this.initialized = true;
+            var deploybugSocket = this.deploybugSocket = io.connect(options.serverHostName + ':' + options.serverPort);
+            deploybugSocket.of('/deploybug/descriptions'); //BUGBUG
+            deploybugSocket.on('connecting', function(data){
                 console.log('Connecting to DeployBugServer...');
                 console.log(data);
             });
 
-            packagesSocket.on('connect', function(data){
+            deploybugSocket.on('connect', function(data){
                 console.log("Connected to DeployBugServer");
             });
 
-            packagesSocket.on('error', function(reason){
+            deploybugSocket.on('error', function(reason){
                 console.log("Unable to connect to DeployBugServer via socket", reason);
                 process.exit(1);
             });
 
-            packagesSocket.on('message', function(data){
+            deploybugSocket.on('message', function(data){
                 console.log(data);
             });
 
-            packagesSocket.on('disconnect', function(data){
+            deploybugSocket.on('disconnect', function(data){
                 console.log('Disconnected from DeployBugServer');
                 process.exit(1);
             });
 
-            callback();
+            callback(this);
         }
+    },
+    
+    registry: function(options, callback) {
+        var deploybugSocket = this.deploybugSocket;
+        var callKey = this.generateCallKey();
+        var clientData = {
+            callKey: callKey
+        };
+
+        deploybugSocket.emit('registry', clientData);
+        console.log('Waiting for response from DeployBugServer...');
+
+        deploybugSocket.on('registry-' + callKey, function(data){
+            deploybugSocket.removeAllListeners('registry-' + callKey);
+            console.log(JSON.stringify(data));
+            callback(null, data); // should I check for the existence of a callback?
+        });
     },
 
     /**
      * @param {{
      *  key: string,
      *  descriptionJSON: {
-     *  key: string,
-     *  packageURL: string,
-     *  packageType: string,
-     *  startScript: (string | Path)
+     *      key: string,
+     *      packageURL: string,
+     *      packageType: string,
+     *      metaData: {*}
      * }} options
      * @param {function(Error, {*})} callback
      */
-    registerPackage: function(options, callback) {
-        var packagesSocket = DeployBugClient.packagesSocket;
+    registerDescription: function(options, callback) {
+        var deploybugSocket = this.deploybugSocket;
         var key = options.key;
-        var callKey = DeployBugClient.generateCallKey(key);
+        var descriptionJSON = options.descriptionJSON;
+        var callKey = this.generateCallKey(key);
         var clientData = {
-            callKey: callKey,
             key: key,
-            descriptionJSON: options.descriptionJSON
+            callKey: callKey,
+            descriptionJSON: descriptionJSON
         };
 
         //TODO: Validate key matches key inside descriptionJSON
 
-        packagesSocket.emit('register', clientData);
+        deploybugSocket.emit('register', clientData);
         console.log('Waiting for response from DeployBugServer...');
 
-        packagesSocket.on('registered-' + callKey, function(data){
-            packagesSocket.removeAllListeners('registered-' + callKey, 'error-registered-' + callKey);
-            console.log(JSON.stringify(data));
+        deploybugSocket.on('registered-' + callKey, function(data){
+            deploybugSocket.removeAllListeners('registered-' + callKey, 'error-registered-' + callKey);
+            // console.log(JSON.stringify(data));
             callback(null, data); // should I check for the existence of a callback?
+            console.log("Description successfully registered");
         });
 
-        packagesSocket.on('error-registering-' + callKey, function(data){
-            packagesSocket.removeAllListeners('registered-' + callKey, 'error-registered-' + callKey);
-            var error = data.error;
-            console.log(JSON.stringify(data));
+        deploybugSocket.on('error-registering-' + callKey, function(data){
+            deploybugSocket.removeAllListeners('registered-' + callKey, 'error-registered-' + callKey);
+            var error = data.error || new Error();
+            // console.log(JSON.stringify(data));
             callback(error, data);
+            console.log();
         });
     },
 
@@ -148,10 +171,10 @@ var DeployBugClient = {
      * }} options
      * @param {function(Error, {*})} callback
      */
-     updatePackage: function(options, callback){
-        var packagesSocket = DeployBugClient.packagesSocket;
+     updateDescription: function(options, callback){
+        var deploybugSocket = this.deploybugSocket;
         var key = options.key;
-        var callKey = DeployBugClient.generateCallKey(key);
+        var callKey = this.generateCallKey(key);
         var clientData = {
             callKey: callKey,
             key: options.key,
@@ -159,16 +182,18 @@ var DeployBugClient = {
         };
         //TODO: Validate key matches key inside descriptionJSON
 
-        packagesSocket.emit('update', clientData);
+        deploybugSocket.emit('update', clientData);
 
-        packagesSocket.on('updated-' + callKey, function(data) {
-            packagesSocket.removeAllListeners('updated-' + callKey, 'error-updating-' + callKey);
+        deploybugSocket.on('updated-' + callKey, function(data) {
+            deploybugSocket.removeAllListeners('updated-' + callKey, 'error-updating-' + callKey);
             callback(null, data);
+            console.log("Description successfully updated");
         });
-        packagesSocket.on('error-updating-' + callKey, function(data) {
-            packagesSocket.removeAllListeners('updated-' + callKey, 'error-updating-' + callKey);
-            var error = data.error;
+        deploybugSocket.on('error-updating-' + callKey, function(data) {
+            deploybugSocket.removeAllListeners('updated-' + callKey, 'error-updating-' + callKey);
+            var error = data.error || new Error();
             callback(error, data);
+            console.log();
         });
     },
 
@@ -178,107 +203,60 @@ var DeployBugClient = {
      * }} options
      * @param {function(Error, {*})} callback
      */
-    deployPackage: function(options, callback) {
-        var packagesSocket = DeployBugClient.packagesSocket;
+    runCommand: function(options, callback) {
+        var deploybugSocket = this.deploybugSocket;
         var key = options.key;
-        var callKey = DeployBugClient.generateCallKey(key);
+        var command = options.command;
+        var callKey = this.generateCallKey(key, command);
         var clientData = {
+            key: key,
             callKey: callKey,
-            key: options.key
+            command: command
         };
 
-        packagesSocket.emit('deploy', clientData);
+        deploybugSocket.emit('runCommand', clientData);
 
-        packagesSocket.on('deployed-' + callKey, function(data) {
-            packagesSocket.removeAllListeners('deployed-' + callKey, 'error-deploying-' + callKey);
+        deploybugSocket.on('ranCommand-' + callKey, function(data) {
+            deploybugSocket.removeAllListeners('ranCommand-' + callKey, 'error-runningCommand-' + callKey);
             callback(null, data);
+            console.log("Command", command, "ran successfully");
         });
-        packagesSocket.on('error-deploying-' + callKey, function(data) {
-            packagesSocket.removeAllListeners('deployed-' + callKey, 'error-deploying-' + callKey);
+        deploybugSocket.on('error-runningCommand-' + callKey, function(data) {
+            deploybugSocket.removeAllListeners('ranCommand-' + callKey, 'error-runningCommand-' + callKey);
             var error = data.error;
             callback(error, data);
+            console.log();
         });
     },
-
+    
     /**
      * @param {{
      *  key: string,
      * }} options
      * @param {function(Error, {*})} callback
      */
-    startPackage: function(options, callback) {
-        var packagesSocket = DeployBugClient.packagesSocket;
+    runInstruction: function(options, callback) {
+        var deploybugSocket = this.deploybugSocket;
         var key = options.key;
-        var callKey = DeployBugClient.generateCallKey(key);
+        var command = options.command;
+        var instruction = options.instruction;
+        var callKey = this.generateCallKey(key, command, instruction);
         var clientData = {
+            key: key,
+            command: command,
             callKey: callKey,
-            key: options.key
+            targetPackage: options.targetPackage,
+            instruction: instruction
         };
 
-        packagesSocket.emit('start', clientData);
+        deploybugSocket.emit('runInstruction', clientData);
 
-        packagesSocket.on('started-' + callKey, function(data) {
-            packagesSocket.removeAllListeners('started-' + callKey, 'error-starting-' + callKey);
+        deploybugSocket.on('ranInstruction-' + callKey, function(data) {
+            deploybugSocket.removeAllListeners('ranInstruction-' + callKey, 'error-runningInstruction-' + callKey);
             callback(null, data);
         });
-        packagesSocket.on('error-starting-' + callKey, function(data) {
-            packagesSocket.removeAllListeners('started-' + callKey, 'error-starting-' + callKey);
-            var error = data.error;
-            callback(error, data);
-        });
-    },
-
-    /**
-     * @param {{
-     *  key: string,
-     * }} options
-     * @param {function(Error, {*})} callback
-     */
-    stopPackage: function(options, callback) {
-        var packagesSocket = DeployBugClient.packagesSocket;
-        var key = options.key;
-        var callKey = DeployBugClient.generateCallKey(key);
-        var clientData = {
-            callKey: callKey,
-            key: options.key
-        };
-
-        packagesSocket.emit('stop', clientData);
-
-        packagesSocket.on('stopped-' + callKey, function(data) {
-            packagesSocket.removeAllListeners('stopped-' + callKey, 'error-stopping-' + callKey);
-            callback(null, data);
-        });
-        packagesSocket.on('error-stopping-' + callKey, function(data) {
-            packagesSocket.removeAllListeners('stopped-' + callKey, 'error-stopping-' + callKey);
-            var error = data.error;
-            callback(error, data);
-        });
-    },
-
-    /**
-     * @param {{
-     *  key: string,
-     * }} options
-     * @param {function(Error, {*})} callback
-     */
-     restartPackage: function(options, callback) {
-        var packagesSocket = DeployBugClient.packagesSocket;
-        var key = options.key;
-        var callKey = DeployBugClient.generateCallKey(key);
-        var clientData = {
-            callKey: callKey,
-            key: options.key
-        };
-
-        packagesSocket.emit('restart', clientData);
-
-        packagesSocket.on('restarted-' + callKey, function(data) {
-            packagesSocket.removeAllListeners('restarted-' + callKey, 'error-restarting-' + callKey);
-            callback(null, data);
-        });
-        packagesSocket.on('error-restarting-' + callKey, function(data) {
-            packagesSocket.removeAllListeners('restarted-' + callKey, 'error-restarting-' + callKey);
+        deploybugSocket.on('error-runningInstruction-' + callKey, function(data) {
+            deploybugSocket.removeAllListeners('ranInstruction-' + callKey, 'error-runningInstruction-' + callKey);
             var error = data.error;
             callback(error, data);
         });
@@ -293,10 +271,10 @@ var DeployBugClient = {
      * @private
      * @param {string} key
     */
-    generateCallKey: function (key){
-        return key + (DeployBugClient.count ++);
+    generateCallKey: function (){
+        return  Array.prototype.join.call(arguments, "") + (this.count ++);
     }
-};
+});
 
 
 //-------------------------------------------------------------------------------

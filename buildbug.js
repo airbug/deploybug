@@ -37,7 +37,7 @@ buildProperties({
     deploybug: {
         packageJson: {
             name: "deploybug",
-            version: "0.0.4",
+            version: "0.0.5",
             main: "./lib/deploybug-module.js",
             bin: "bin/deploybug",
             dependencies: {
@@ -70,19 +70,22 @@ buildProperties({
     deploybugserver: {
         packageJson: {
             name: "deploybugserver",
-            version: "0.0.4",
+            version: "0.0.5",
             main: "./lib/DeployBugServer.js",
             dependencies: {
                 bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.4.tgz",
                 "npm": "1.2.x",
                 "express": "3.1.x",
                 "socket.io": "0.9.x",
-                "forever": "0.10.x"
+                "socket.io-client": "0.9.x",
+                "forever": "0.10.x",
+                "sqlite3": "2.1.x"
             },
             scripts: {}
         },
         sourcePaths: [
             "./projects/deploybugserver/js/src",
+            "./projects/deploybug/js/src",
             "../bugjs/projects/bugjs/js/src",
             "../bugjs/projects/bugtrace/js/src",
             '../bugjs/projects/bugflow/js/src',
@@ -93,6 +96,38 @@ buildProperties({
         ],
         scriptPaths: [
             "./projects/deploybugserver/js/scripts",
+            "../bugunit/projects/bugunit/js/scripts"
+        ],
+        testPaths: [
+            "../bugjs/projects/bugjs/js/test"
+        ]
+    },
+    deploybugnode: {
+        packageJson: {
+            name: "deploybugnode",
+            version: "0.0.5",
+            main: "./lib/DeployBugNode.js",
+            dependencies: {
+                bugpack: "https://s3.amazonaws.com/airbug/bugpack-0.0.3.tgz",
+                "npm": "1.2.x",
+                "express": "3.1.x",
+                "socket.io": "0.9.x",
+                "forever": "0.10.x"
+            },
+            scripts: {}
+        },
+        sourcePaths: [
+            "./projects/deploybugnode/js/src",
+            "../bugjs/projects/bugjs/js/src",
+            "../bugjs/projects/bugtrace/js/src",
+            '../bugjs/projects/bugflow/js/src',
+            '../bugjs/projects/bugboil/js/src',
+            "../bugjs/projects/bugfs/js/src",
+            "../bugjs/projects/annotate/js/src",
+            "../bugunit/projects/bugunit/js/src"
+        ],
+        scriptPaths: [
+            "./projects/deploybugnode/js/scripts",
             "../bugunit/projects/bugunit/js/scripts"
         ],
         testPaths: [
@@ -247,6 +282,65 @@ buildTarget('local').buildFlow(
                         bucket: buildProject.getProperty("local-bucket")
                     }
                 })
+            ]),
+            series([
+                targetTask('createNodePackage', {
+                    properties: {
+                        packageJson: buildProject.getProperty("deploybugnode.packageJson"),
+                        sourcePaths: buildProject.getProperty("deploybugnode.sourcePaths"),
+                        scriptPaths: buildProject.getProperty("deploybugnode.scriptPaths"),
+                        testPaths: buildProject.getProperty("deploybugnode.testPaths"),
+                        binPaths: buildProject.getProperty("deploybugnode.binPaths")
+                    }
+                }),
+                targetTask('generateBugPackRegistry', {
+                    init: function(task, buildProject, properties) {
+                        var nodePackage = nodejs.findNodePackage(
+                            buildProject.getProperty("deploybugnode.packageJson.name"),
+                            buildProject.getProperty("deploybugnode.packageJson.version")
+                        );
+                        task.updateProperties({
+                            sourceRoot: nodePackage.getBuildPath()
+                        });
+                    }
+                }),
+                targetTask('packNodePackage', {
+                    properties: {
+                        packageName: buildProject.getProperty("deploybugnode.packageJson.name"),
+                        packageVersion: buildProject.getProperty("deploybugnode.packageJson.version")
+                    }
+                }),
+                targetTask('startNodeModuleTests', {
+                    init: function(task, buildProject, properties) {
+                        var packedNodePackage = nodejs.findPackedNodePackage(
+                            buildProject.getProperty("deploybugnode.packageJson.name"),
+                            buildProject.getProperty("deploybugnode.packageJson.version")
+                        );
+                        task.updateProperties({
+                            modulePath: packedNodePackage.getFilePath()
+                        });
+                    }
+                }),
+                targetTask("s3EnsureBucket", {
+                    properties: {
+                        bucket: buildProject.getProperty("local-bucket")
+                    }
+                }),
+                targetTask("s3PutFile", {
+                    init: function(task, buildProject, properties) {
+                        var packedNodePackage = nodejs.findPackedNodePackage(buildProject.getProperty("deploybugnode.packageJson.name"),
+                            buildProject.getProperty("deploybugnode.packageJson.version"));
+                        task.updateProperties({
+                            file: packedNodePackage.getFilePath(),
+                            options: {
+                                ACL: 'public-read'
+                            }
+                        });
+                    },
+                    properties: {
+                        bucket: buildProject.getProperty("local-bucket")
+                    }
+                })
             ])
         ])
     ])
@@ -374,6 +468,65 @@ buildTarget('prod').buildFlow(
                             file: packedNodePackage.getFilePath(),
                             options: {
                                 acl: 'public-read'
+                            }
+                        });
+                    },
+                    properties: {
+                        bucket: "airbug"
+                    }
+                })
+            ]),
+            series([
+                targetTask('createNodePackage', {
+                    properties: {
+                        packageJson: buildProject.getProperty("deploybugnode.packageJson"),
+                        sourcePaths: buildProject.getProperty("deploybugnode.sourcePaths"),
+                        scriptPaths: buildProject.getProperty("deploybugnode.scriptPaths"),
+                        testPaths: buildProject.getProperty("deploybugnode.testPaths"),
+                        binPaths: buildProject.getProperty("deploybugnode.binPaths")
+                    }
+                }),
+                targetTask('generateBugPackRegistry', {
+                    init: function(task, buildProject, properties) {
+                        var nodePackage = nodejs.findNodePackage(
+                            buildProject.getProperty("deploybugnode.packageJson.name"),
+                            buildProject.getProperty("deploybugnode.packageJson.version")
+                        );
+                        task.updateProperties({
+                            sourceRoot: nodePackage.getBuildPath()
+                        });
+                    }
+                }),
+                targetTask('packNodePackage', {
+                    properties: {
+                        packageName: buildProject.getProperty("deploybugnode.packageJson.name"),
+                        packageVersion: buildProject.getProperty("deploybugnode.packageJson.version")
+                    }
+                }),
+                targetTask('startNodeModuleTests', {
+                    init: function(task, buildProject, properties) {
+                        var packedNodePackage = nodejs.findPackedNodePackage(
+                            buildProject.getProperty("deploybugnode.packageJson.name"),
+                            buildProject.getProperty("deploybugnode.packageJson.version")
+                        );
+                        task.updateProperties({
+                            modulePath: packedNodePackage.getFilePath()
+                        });
+                    }
+                }),
+                targetTask("s3EnsureBucket", {
+                    properties: {
+                        bucket: "airbug"
+                    }
+                }),
+                targetTask("s3PutFile", {
+                    init: function(task, buildProject, properties) {
+                        var packedNodePackage = nodejs.findPackedNodePackage(buildProject.getProperty("deploybugnode.packageJson.name"),
+                            buildProject.getProperty("deploybugnode.packageJson.version"));
+                        task.updateProperties({
+                            file: packedNodePackage.getFilePath(),
+                            options: {
+                                ACL: 'public-read'
                             }
                         });
                     },
