@@ -6,7 +6,6 @@
 
 //@Export('DeployBugServer')
 
-//@Require('bugboil.BugBoil')
 //@Require('bugflow.BugFlow')
 //@Require('deploybug.DeployBugClient')
 //@Require('deploybugnode.DeployBug')
@@ -15,7 +14,7 @@
 
 
 //-------------------------------------------------------------------------------
-// Requires
+// Common Modules
 //-------------------------------------------------------------------------------
 
 var express     = require('express');
@@ -25,22 +24,28 @@ var bugpack     = require('bugpack').context(module);
 
 require('express-namespace');
 
+
 //-------------------------------------------------------------------------------
 // BugPack
 //-------------------------------------------------------------------------------
 
-var BugBoil =   bugpack.require('bugboil.BugBoil');
 var BugFlow             = bugpack.require('bugflow.BugFlow');
 var DeployBugClient     = bugpack.require('deploybug.DeployBugClient');
 var NodeRegistry        = bugpack.require('deploybugserver.NodeRegistry');
 // var PackageRegistry     = bugpack.require('deploybugserver.PackageRegistry');
 var DescriptionRegistry = bugpack.require('deploybugserver.DescriptionRegistry');
 
-var $foreachParallel    = BugBoil.$foreachParallel;
-var $foreachSeries      = BugBoil.$foreachSeries;
+
+//-------------------------------------------------------------------------------
+// Simplify References
+//-------------------------------------------------------------------------------
+
+var $foreachParallel    = BugFlow.$foreachParallel;
+var $foreachSeries      = BugFlow.$foreachSeries;
 var $series             = BugFlow.$series;
-var $parallel           = BugFlow.$parallel;
 var $task               = BugFlow.$task;
+
+
 //-------------------------------------------------------------------------------
 // Build App
 //-------------------------------------------------------------------------------
@@ -67,6 +72,7 @@ var DeployBugServer = {
     app: function(){
         return express();
     },
+
 
     //-------------------------------------------------------------------------------
     // Variables
@@ -227,14 +233,14 @@ var DeployBugServer = {
                     $task(function(flow){
                         // Each instruction in the instructions array is run in series
                         // Each instruction is sent out to all applicable nodes in parallel
-                        $foreachSeries(instructions, function(boil, instruction){
+                        $foreachSeries(instructions, function(flow, instruction){
                             var options = {
                                 command: command,
                                 instruction: instruction.type,
                                 targetPackage: description.packages[instruction.targetPackage]
                             };
                             NodeRegistry.findNodes(instruction.nodes, function(error, nodes){
-                               $foreachParallel(nodes, function(boil, node){
+                               $foreachParallel(nodes, function(flow, node){
                                    var serverOptions = {
                                        serverHostName: node.hostname,
                                        serverPort: node.port
@@ -253,11 +259,11 @@ var DeployBugServer = {
                                            }
                                            deployBugClient = null; //TODO: Rewrite
                                            console.log("DeployBugClient connection closed for:", node.hostname, node.port);
-                                           boil.bubble(error);
+                                           flow.complete(error);
                                        });
                                    });
                                }).execute(function(error){ //$foreachParallel
-                                   boil.bubble(error);
+                                   flow.complete(error);
                                });
                             });
                         }).execute(function(error){  //$foreachSeries
