@@ -2,7 +2,7 @@
 // Requires
 //-------------------------------------------------------------------------------
 
-//@Require('deploybugserver.DeployBugServer')
+//@Require('deploybugnode.DeployBugNode')
 
 
 //-------------------------------------------------------------------------------
@@ -15,15 +15,11 @@ var bugpack = require('bugpack').context(module);
 // BugPack
 //-------------------------------------------------------------------------------
 
-var DeployBugServer = bugpack.require('deploybugserver.DeployBugServer');
+var DeployBugNode = bugpack.require('deploybugnode.DeployBugNode');
 
 
 //-------------------------------------------------------------------------------
 // Bootstrap
 //-------------------------------------------------------------------------------
 
-// TODO: this should create a new instance of DeployBugServer
-// var deployBugServer = new DeployBugServer();
-// or var deployBugServer = bugpack.require('deploybug.DeployBugServer');
-
-DeployBugServer.start();
+DeployBugNode.start();

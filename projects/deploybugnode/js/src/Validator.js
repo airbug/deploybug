@@ -2,7 +2,7 @@
 // Requires
 //-------------------------------------------------------------------------------
 
-//@Package('deploybugserver')
+//@Package('deploybugnode')
 
 //@Export('Validator')
 
@@ -72,11 +72,55 @@ var Validator = {
         //TODO: validate the packageType is of a supported type
         //QUESTION: Any limitations on the supported characters or keywords of the "key"
     },
+
+    validateNodeDescription: function(descriptionJSON){
+        console.log("Validating package description");
+        var key = descriptionJSON.key;
+        var requiredProperties = [  {name: "key", value: key}
+        ];
+        
+        requiredProperties.forEach(function(property){
+            var name = property.name;
+            var value = property.value;
+            if(Validator.isEmptyString(value) || value == null){
+                throw new Error("Invalid node description. " + name + " is required.");
+            }
+        });
+    },
     
-    validatePackageType: function(type){
+    /**
+     * @params {string} key
+     * @params {string} packageDescriptionKey
+     */
+    validateKeyMatch: function(key, packageDescriptionKey){
+        if(key !== packageDescriptionKey){
+            throw new Error("Package key does not match package description.");
+        }
     },
 
+    /**
+     * @params {string} key
+     */
+    validatePackageType: function(type){
+        if(type !== 'nodejs' && type !== 'clientjs'){
+            throw new Error("Invalid 'packageType'. Package type must be either 'clientjs' or 'nodejs'");
+        }
+    },
+
+    /**
+     * @params {string} key
+     */
     validatePackageURL: function(url){
+    },
+
+    /**
+     * @params {string} key
+     */
+    validatePackageKey: function(key){ //change to isValidPackageKey method that returns a boolean????
+        var regexp = /[\w.-]/i;
+        if(!regexp.test(key)){
+           throw new Error("Invalid Package Key. Package keys can only letters, numbers, underscores, dots, and dashes.");
+        }
     },
 
     isEmptyString: function(string){
@@ -89,4 +133,4 @@ var Validator = {
 // Exports
 //-------------------------------------------------------------------------------
 
-bugpack.export('deploybugserver.Validator', Validator);
+bugpack.export('deploybugnode.Validator', Validator);

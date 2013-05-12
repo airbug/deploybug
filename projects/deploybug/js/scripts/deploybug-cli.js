@@ -6,6 +6,7 @@
 //@Require('bugfs.BugFs')
 //@Require('deploybug.DeployBugClient')
 
+
 //-------------------------------------------------------------------------------
 // Common Modules
 //-------------------------------------------------------------------------------
@@ -13,6 +14,7 @@
 var bugpack = require('bugpack').context(module);
 var http = require('http');
 var path = require('path');
+
 
 //-------------------------------------------------------------------------------
 // BugPack
@@ -22,12 +24,14 @@ var BugFlow =           bugpack.require('bugflow.BugFlow');
 var BugFs =             bugpack.require('bugfs.BugFs');
 var DeployBugClient =   bugpack.require('deploybug.DeployBugClient');
 
+
 //-------------------------------------------------------------------------------
 // Simplify References
 //-------------------------------------------------------------------------------
 
 var $series =   BugFlow.$series;
 var $task =     BugFlow.$task;
+
 
 //-------------------------------------------------------------------------------
 // Variables
@@ -48,6 +52,7 @@ var actions = [];
 var configFilePath = path.resolve(__dirname, '../config/DeployBugClient.config.json');
 var environment = process.env.NODE_ENV || "development";
 
+
 //-------------------------------------------------------------------------------
 // Validations
 //-------------------------------------------------------------------------------
@@ -55,6 +60,7 @@ var environment = process.env.NODE_ENV || "development";
 if (!argv[2]) {
     throw new Error("Must specify an action such as start or stop");
 }
+
 
 //-------------------------------------------------------------------------------
 // Parse Arguments
@@ -91,7 +97,8 @@ var setOptionsAndActions = (function(){
         '-k': 'key',
         '--key': 'key',
         '-d': 'descriptionPath',
-        '--description': 'descriptionPath'
+        '--description': 'descriptionPath',
+        'run': 'command'
     };
 
     var actionFlags = {
@@ -111,46 +118,16 @@ var setOptionsAndActions = (function(){
             actions.push('configure');
         },
         'register': function(){
-            actions.push('registerPackage');
+            actions.push('registerDescription');
         },
         'update': function(){
-            actions.push('updatePackage');
+            actions.push('updateDescription');
         },
-        'deploy': function(){
-            actions.push('deployPackage');
+        'run': function(){
+            actions.push('runCommand');
         },
-        'start': function(){
-            actions.push('startPackage');
-        },
-        'stop': function(){ 
-            actions.push('deployPackage');
-        },
-        'restart': function(){
-            actions.push('restartPackage');
-        },
-        'rd': function(){
-            actions.push('registerPackage');
-            actions.push('deployPackage');
-        },
-        'rds': function(){
-            actions.push('registerPackage');
-            actions.push('deployPackage');
-            actions.push('startPackage');
-        },
-        'su': function(){
-            actions.push('stopPackage');
-            actions.push('updatePackage');
-        },
-        'sud': function(){
-            actions.push('stopPackage');
-            actions.push('updatePackage');
-            actions.push('deployPackage');
-        },
-        'suds': function(){
-            actions.push('stopPackage');
-            actions.push('updatePackage');
-            actions.push('deployPackage');
-            actions.push('startPackage');
+        'registry': function(){
+            actions.push('registry');
         }
     }
 
@@ -161,7 +138,8 @@ var setOptionsAndActions = (function(){
         var flag = argv[i];
         if(actionFlags[flag]){
             actionFlags[flag]();
-        } else if (optionFlags[flag]) {
+        } 
+        if (optionFlags[flag]) {
             options[optionFlags[flag]] = argv[i + 1];
         }
     }
@@ -180,15 +158,13 @@ var setOptionsAndActions = (function(){
     }
 })();
 
+
 //-------------------------------------------------------------------------------
 // Execute Actions
 //-------------------------------------------------------------------------------
+console.log(options);
 
-console.log('key: ' + options.key);
-console.log('server: ' + options.serverHostName);
-console.log('port: ' + options.serverPort);
-
-DeployBugClient.initialize(options, function(){
+var deployBugClient = new DeployBugClient(options, function(){
    console.log("DeployBugClient initialized");
 });
 
@@ -218,14 +194,15 @@ actions.forEach(function(action){
     } else {
         
         flowArray.push($task(function(flow){ 
-            DeployBugClient[action](options, function(error, data){ 
+            deployBugClient[action](options, function(error, data){ 
                 if(!error){
-                    console.log(action + ' task completed \n', "Return Data: ", data);
+                    console.log(action + ' task completed');
+                    console.log("Return Data: ", data);
                 } else {
-                    console.log(error, "\n", "Return Data: ",  data);
+                    console.log(error);
+                    console.log("Return Data: ", data);
                 }
                 flow.complete(error);
-                
             });
         }));
     }
