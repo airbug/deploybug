@@ -53,6 +53,7 @@ buildProperties({
             '../bugjs/projects/bugflow/js/src',
             "../bugjs/projects/bugfs/js/src",
             "../bugjs/projects/annotate/js/src",
+            "../bugunit/projects/bugdouble/js/src",
             "../bugunit/projects/bugunit/js/src"
         ],
         scriptPaths: [
@@ -90,6 +91,7 @@ buildProperties({
             '../bugjs/projects/bugflow/js/src',
             "../bugjs/projects/bugfs/js/src",
             "../bugjs/projects/annotate/js/src",
+            "../bugunit/projects/bugdouble/js/src",
             "../bugunit/projects/bugunit/js/src"
         ],
         scriptPaths: [
@@ -121,6 +123,7 @@ buildProperties({
             '../bugjs/projects/bugflow/js/src',
             "../bugjs/projects/bugfs/js/src",
             "../bugjs/projects/annotate/js/src",
+            "../bugunit/projects/bugdouble/js/src",
             "../bugunit/projects/bugunit/js/src"
         ],
         scriptPaths: [
