@@ -40,8 +40,8 @@ var DescriptionRegistry = bugpack.require('deploybugserver.DescriptionRegistry')
 // Simplify References
 //-------------------------------------------------------------------------------
 
-var $foreachParallel    = BugFlow.$foreachParallel;
-var $foreachSeries      = BugFlow.$foreachSeries;
+var $forEachParallel    = BugFlow.$forEachParallel;
+var $forEachSeries      = BugFlow.$forEachSeries;
 var $series             = BugFlow.$series;
 var $task               = BugFlow.$task;
 
@@ -233,14 +233,14 @@ var DeployBugServer = {
                     $task(function(flow){
                         // Each instruction in the instructions array is run in series
                         // Each instruction is sent out to all applicable nodes in parallel
-                        $foreachSeries(instructions, function(flow, instruction){
+                        $forEachSeries(instructions, function(flow, instruction){
                             var options = {
                                 command: command,
                                 instruction: instruction.type,
                                 targetPackage: description.packages[instruction.targetPackage]
                             };
                             NodeRegistry.findNodes(instruction.nodes, function(error, nodes){
-                               $foreachParallel(nodes, function(flow, node){
+                               $forEachParallel(nodes, function(flow, node){
                                    var serverOptions = {
                                        serverHostName: node.hostname,
                                        serverPort: node.port
@@ -262,11 +262,11 @@ var DeployBugServer = {
                                            flow.complete(error);
                                        });
                                    });
-                               }).execute(function(error){ //$foreachParallel
+                               }).execute(function(error){ //$forEachParallel
                                    flow.complete(error);
                                });
                             });
-                        }).execute(function(error){  //$foreachSeries
+                        }).execute(function(error){  //$forEachSeries
                             flow.complete(error);
                         });
                     })
