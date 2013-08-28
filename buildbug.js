@@ -52,7 +52,7 @@ buildProperties({
             "../bugjs/projects/bugtrace/js/src",
             '../bugjs/projects/bugflow/js/src',
             "../bugjs/projects/bugfs/js/src",
-            "../bugjs/projects/annotate/js/src",
+            "../bugjs/projects/bugmeta/js/src",
             "../bugunit/projects/bugdouble/js/src",
             "../bugunit/projects/bugunit/js/src"
         ],
@@ -90,7 +90,7 @@ buildProperties({
             "../bugjs/projects/bugtrace/js/src",
             '../bugjs/projects/bugflow/js/src',
             "../bugjs/projects/bugfs/js/src",
-            "../bugjs/projects/annotate/js/src",
+            "../bugjs/projects/bugmeta/js/src",
             "../bugunit/projects/bugdouble/js/src",
             "../bugunit/projects/bugunit/js/src"
         ],
@@ -122,7 +122,7 @@ buildProperties({
             "../bugjs/projects/bugtrace/js/src",
             '../bugjs/projects/bugflow/js/src',
             "../bugjs/projects/bugfs/js/src",
-            "../bugjs/projects/annotate/js/src",
+            "../bugjs/projects/bugmeta/js/src",
             "../bugunit/projects/bugdouble/js/src",
             "../bugunit/projects/bugunit/js/src"
         ],
