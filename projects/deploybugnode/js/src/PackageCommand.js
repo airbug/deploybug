@@ -21,6 +21,9 @@ var PackageCommand = {
     execute: function(key, commandString, options, callback){
         var logs = [];
         console.log("Executing command: ", commandString);
+
+        //TODO BRN: Change out this call for child_process.spawn. this will prevent buffer overflow errors.
+
         child_process.exec(commandString, options, function (error, stdout, stderr) {
             console.log('stdout: ' + stdout);
             console.log('stderr: ' + stderr);
