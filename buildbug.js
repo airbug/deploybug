@@ -41,7 +41,7 @@ buildProperties({
             main: "./lib/deploybug-module.js",
             bin: "bin/deploybug",
             dependencies: {
-                bugpack: "https://s3.amazonaws.com/deploy-airbug/bugpack-0.0.5.tgz",
+                bugpack: "0.1.14",
                 "socket.io-client": "0.9.x"
             },
             scripts: {}
@@ -73,7 +73,7 @@ buildProperties({
             version: "0.0.5",
             main: "./lib/DeployBugServer.js",
             dependencies: {
-                bugpack: "https://s3.amazonaws.com/deploy-airbug/bugpack-0.0.5.tgz",
+                bugpack: "0.1.14",
                 "npm": "1.2.x",
                 "express": "3.1.x",
                 "socket.io": "0.9.x",
@@ -108,7 +108,7 @@ buildProperties({
             version: "0.0.5",
             main: "./lib/DeployBugNode.js",
             dependencies: {
-                bugpack: "https://s3.amazonaws.com/deploy-airbug/bugpack-0.0.5.tgz",
+                bugpack: "0.1.14",
                 "npm": "1.2.x",
                 "express": "3.1.x",
                 "socket.io": "0.9.x",
