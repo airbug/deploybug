@@ -41,27 +41,25 @@ buildProperties({
             main: "./lib/deploybug-module.js",
             bin: "bin/deploybug",
             dependencies: {
-                bugpack: "0.1.14",
+                bugpack: "0.2.0",
                 "socket.io-client": "0.9.x"
             },
             scripts: {}
         },
         sourcePaths: [
             "./projects/deploybug/js/src",
-            "../bugjs/projects/bugjs/js/src",
-            "../bugjs/projects/bugtrace/js/src",
-            '../bugjs/projects/bugflow/js/src',
-            "../bugjs/projects/bugfs/js/src",
-            "../bugjs/projects/bugmeta/js/src",
-            "../bugunit/projects/bugdouble/js/src",
-            "../bugunit/projects/bugunit/js/src"
+            "../bugcore/libraries/bugcore/js/src",
+            "../bugdouble/libraries/bugdouble/js/src",
+            "../bugfs/libraries/bugfs/js/src",
+            "../bugmeta/libraries/bugmeta/js/src",
+            "../bugunit/libraries/bugunit/js/src"
         ],
         scriptPaths: [
             "./projects/deploybug/js/scripts",
-            "../bugunit/projects/bugunit/js/scripts"
+            "../bugunit/libraries/bugunit/js/scripts"
         ],
         testPaths: [
-            "../bugjs/projects/bugjs/js/test"
+            "../bugcore/libraries/bugcore/js/test"
         ],
         binPaths: [
             "./projects/deploybug/bin"
@@ -73,7 +71,7 @@ buildProperties({
             version: "0.0.5",
             main: "./lib/DeployBugServer.js",
             dependencies: {
-                bugpack: "0.1.14",
+                bugpack: "0.2.0",
                 "npm": "1.2.x",
                 "express": "3.1.x",
                 "socket.io": "0.9.x",
@@ -86,20 +84,18 @@ buildProperties({
         sourcePaths: [
             "./projects/deploybugserver/js/src",
             "./projects/deploybug/js/src",
-            "../bugjs/projects/bugjs/js/src",
-            "../bugjs/projects/bugtrace/js/src",
-            '../bugjs/projects/bugflow/js/src',
-            "../bugjs/projects/bugfs/js/src",
-            "../bugjs/projects/bugmeta/js/src",
-            "../bugunit/projects/bugdouble/js/src",
-            "../bugunit/projects/bugunit/js/src"
+            "../bugcore/libraries/bugcore/js/src",
+            "../bugdouble/libraries/bugdouble/js/src",
+            "../bugfs/libraries/bugfs/js/src",
+            "../bugmeta/libraries/bugmeta/js/src",
+            "../bugunit/libraries/bugunit/js/src"
         ],
         scriptPaths: [
             "./projects/deploybugserver/js/scripts",
-            "../bugunit/projects/bugunit/js/scripts"
+            "../bugunit/libraries/bugunit/js/scripts"
         ],
         testPaths: [
-            "../bugjs/projects/bugjs/js/test"
+            "../bugcore/libraries/bugcore/js/test"
         ]
     },
     deploybugnode: {
@@ -108,7 +104,7 @@ buildProperties({
             version: "0.0.5",
             main: "./lib/DeployBugNode.js",
             dependencies: {
-                bugpack: "0.1.14",
+                bugpack: "0.2.0",
                 "npm": "1.2.x",
                 "express": "3.1.x",
                 "socket.io": "0.9.x",
@@ -118,20 +114,18 @@ buildProperties({
         },
         sourcePaths: [
             "./projects/deploybugnode/js/src",
-            "../bugjs/projects/bugjs/js/src",
-            "../bugjs/projects/bugtrace/js/src",
-            '../bugjs/projects/bugflow/js/src',
-            "../bugjs/projects/bugfs/js/src",
-            "../bugjs/projects/bugmeta/js/src",
-            "../bugunit/projects/bugdouble/js/src",
-            "../bugunit/projects/bugunit/js/src"
+            "../bugcore/libraries/bugcore/js/src",
+            "../bugdouble/libraries/bugdouble/js/src",
+            "../bugfs/libraries/bugfs/js/src",
+            "../bugmeta/libraries/bugmeta/js/src",
+            "../bugunit/libraries/bugunit/js/src"
         ],
         scriptPaths: [
             "./projects/deploybugnode/js/scripts",
             "../bugunit/projects/bugunit/js/scripts"
         ],
         testPaths: [
-            "../bugjs/projects/bugjs/js/test"
+            "../bugcore/libraries/bugcore/js/test"
         ]
     }
 });
