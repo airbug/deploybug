@@ -167,7 +167,7 @@ var NodeRegistry = {
      //  *  @return {Array.<string>}
      //  */
      // getNodeRegistryKeys: function(){
-     //     return NodeRegistry.db.getKeyArray();
+     //     return NodeRegistry.db.toKeyArray();
      // },
      // 
      // /**
